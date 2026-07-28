@@ -1,4 +1,4 @@
-package com.neeyr_mobileapp
+package com.dynamixwave.neeyrdirectory
 
 import android.app.Application
 import com.facebook.react.PackageList
