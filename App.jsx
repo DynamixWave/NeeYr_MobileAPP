@@ -1,24 +1,25 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React from 'react'
+import React from 'react';
+import { StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import AppNavigator from './src/navigation/AppNavigator';
 
 const App = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Hello Welcome</Text>
-    </View>
-  )
-}
+    <SafeAreaProvider>
+      {/* 👇 edges ထဲမှာ 'bottom' ပါ ထည့်ပေးလိုက်ပါ */}
+      <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <AppNavigator />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+};
 
-export default App
+export default App;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center', // ဒေါင်လိုက် (Vertical) အလယ်တည့်တည့်
-    alignItems: 'center',     // ဘေးတိုက် (Horizontal) အလယ်တည့်တည့်
+    backgroundColor: '#ffffff', // အောက်ခြေအထိ နောက်ခံ အဖြူရောင် အပြည့်ပေါ်စေရန်
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-})
+});
