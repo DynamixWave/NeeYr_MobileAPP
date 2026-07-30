@@ -15,8 +15,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    justifyContent: 'center', // အပေါ်အောက် အလယ်ကျစေရန်
-    alignItems: 'center',     // ဘယ်ညာ အလယ်ကျစေရန်
+    justifyContent: 'center', 
+    alignItems: 'center',     
   },
   title: {
     fontSize: 24,

@@ -3,6 +3,7 @@ import { StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 
+
 const App = () => {
   return (
     <SafeAreaProvider>
@@ -20,6 +21,6 @@ export default App;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', // အောက်ခြေအထိ နောက်ခံ အဖြူရောင် အပြည့်ပေါ်စေရန်
+    backgroundColor: '#ffffff',
   },
 });

@@ -3,6 +3,13 @@ import { Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/home/HomeScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import CategoryScreen from '../screens/category/CategoryScreen';
+import NewsScreen from '../screens/news/NewsScreen';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faHouse } from '@fortawesome/free-solid-svg-icons/faHouse';
+import { faNewspaper } from '@fortawesome/free-solid-svg-icons/faNewspaper';
+import { faList } from '@fortawesome/free-solid-svg-icons/faList';
+import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
 
 const Tab = createBottomTabNavigator();
 
@@ -12,14 +19,12 @@ const TabNavigator = () => {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff', // အဖြူရောင် နောက်ခံ
-          // လေးထောင့်ပုံစံဖြစ်စေရန် အောက်ခြေအစွန်းအထိ အပြည့်ကပ်ထားခြင်း (position: absolute ကို ဖြုတ်ထားပါသည်)
+          backgroundColor: '#ffffff', 
           height: Platform.OS === 'ios' ? 85 : 65,
           paddingBottom: Platform.OS === 'ios' ? 25 : 10,
           paddingTop: 8,
           borderTopWidth: 1,
-          borderTopColor: '#e0e0e0', // အပေါ်ဘက်မှာ ပါးလွှာတဲ့ အစင်းရာလေးတစ်ခု ခံထားခြင်း
-          // ထောင့်စွန်းများ ဝိုင်းမနေစေရန် (borderRadius လုံးဝမပါပါ)
+          borderTopColor: '#e0e0e0',
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
           elevation: 8, // Android အတွက် အရိပ်အနည်းငယ်
@@ -36,11 +41,34 @@ const TabNavigator = () => {
         },
       }}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
         options={{
           title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesomeIcon icon={faHouse} size={size} color={color} />
+          ),
+        }}
+      />
+       <Tab.Screen
+        name="Category"
+        component={CategoryScreen}
+        options={{
+          title: 'Category',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesomeIcon icon={faList} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="News"
+        component={NewsScreen}
+        options={{
+          title: 'News',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesomeIcon icon={faNewspaper} size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen 
@@ -48,6 +76,9 @@ const TabNavigator = () => {
         component={ProfileScreen} 
         options={{
           title: 'Profile', 
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesomeIcon icon={faUser} size={size} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
