@@ -3,9 +3,15 @@ import React from 'react'
 
 const HomeScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>HomeScreen</Text>
+    <>
+    <View className="profile-container" style={styles.container}>
+      <Text style={styles.title}>Welcome to NeeYr Mobile App</Text>
     </View>
+
+    <View>
+      
+    </View>
+    </>
   )
 }
 

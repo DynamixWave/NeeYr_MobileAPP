@@ -1,12 +1,12 @@
-export const BASE_URL = 'https://apineeyrdirectory.fothubtv.com'; 
+const BASE_URL = 'https://apineeyrdirectory.fothubtv.com/api'; 
 
 // --------------------------------------------------------
 // API ENDPOINTS (Matching Postman Collection)
 // --------------------------------------------------------
-export const ENDPOINTS = {
+export default  ENDPOINTS = {
   // Auth
-  LOGIN: `${BASE_URL}/api/login/`,   
-  REGISTER: `${BASE_URL}/api/register/`,
+  LOGIN: `${BASE_URL}/login/`,   
+  REGISTER: BASE_URL + '/register/',
 
   // Users
   USER_LIST: `${BASE_URL}/api/users/`,
@@ -49,4 +49,3 @@ export const ENDPOINTS = {
   WEBHOOK_MMPAY: `${BASE_URL}/api/webhooks/mmpay/`,
 };
 
-export default ENDPOINTS;

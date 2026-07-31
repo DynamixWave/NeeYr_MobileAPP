@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView
 } from 'react-native';
-import ENDPOINTS  from '../../../endpoint/endpoints';
+import ENDPOINTS from '../../endpoint/endpoints';
 
 const SignUpScreen = ({ navigation }) => {
     // --- Common Fields ---
@@ -23,6 +23,9 @@ const SignUpScreen = ({ navigation }) => {
         setIsLoading(true);
         console.log("\n========== STARTING SIGNUP REQUEST ==========");
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
             // STEP 1: Create FormData payload matching Postman collection
             const formData = new FormData();
@@ -35,29 +38,25 @@ const SignUpScreen = ({ navigation }) => {
             console.log(`Hitting URL: ${ENDPOINTS.REGISTER}`);
             console.log('Signup payload:', { username: username.trim(), email: email.trim(), password: '***' });
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-
             const registerResponse = await fetch(ENDPOINTS.REGISTER, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
+                    // 'User-Agent': 'NeeYrMobileApp/1.0',
                 },
                 body: formData,
                 signal: controller.signal,
             });
-            clearTimeout(timeoutId);
 
             console.log('HTTP Status Code:', registerResponse.status);
             const registerRawText = await registerResponse.text();
             console.log("Raw Server Response:", registerRawText);
 
-            let registerData;
+            let registerData = {};
             try {
-                registerData = JSON.parse(registerRawText);
+                registerData = registerRawText ? JSON.parse(registerRawText) : {};
             } catch (jsonError) {
                 Alert.alert('Server Error', 'Invalid response format received from server.');
-                setIsLoading(false);
                 return;
             }
 
@@ -87,27 +86,28 @@ const SignUpScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('========== NETWORK/FETCH ERROR ==========', {
-                endpoint: ENDPOINTS.REGISTER,
-                username,
-                email,
-                password: password ? '***' : '',
-                firstName,
-                lastName,
                 name: error.name,
                 message: error.message,
                 stack: error.stack,
-                fullError: error,
             });
 
+            console.log("--- ADVANCED ERROR DEBUGGING ---");
+            console.log("Error toString():", error.toString());
+            console.log("Error JSON stringify:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+            console.log("--------------------------------");
+
             if (error.name === 'AbortError') {
-                Alert.alert('Connection Timeout', 'The request timed out. Please check your internet connection.');
+                Alert.alert('Connection Timeout', 'The request took too long. Please check your internet connection and try again.');
+            } else if (error instanceof TypeError) {
+                Alert.alert('Network Error', 'Unable to reach the server. Please check your internet connection and the API URL.');
             } else {
                 Alert.alert(
                     'Network Error',
-                    'Network request failed. Please verify:\n1. Wi-Fi / Mobile Data is enabled on your device/emulator.\n2. Device date and time are accurate.\n3. The backend server is accessible.'
+                    `Request failed: ${error.message}`
                 );
             }
         } finally {
+            clearTimeout(timeoutId);
             setIsLoading(false);
         }
     };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import ENDPOINTS from '../../../endpoint/endpoints';
+import endpoints from '../../endpoint/endpoints';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -19,10 +19,11 @@ const LoginScreen = ({ navigation }) => {
       formData.append('username', email.trim());
       formData.append('password', password);
 
-      const response = await fetch(ENDPOINTS.LOGIN, {
+      const response = await fetch(endpoints.LOGIN, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
+          // 'User-Agent': 'NeeYrMobileApp/1.0',
         },
         body: formData,
       });
