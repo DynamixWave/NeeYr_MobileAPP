@@ -8,7 +8,6 @@ const SignUpScreen = ({ navigation }) => {
     // --- Common Fields ---
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [password, setPassword] = useState('');
@@ -25,17 +24,17 @@ const SignUpScreen = ({ navigation }) => {
         console.log("\n========== STARTING SIGNUP REQUEST ==========");
 
         try {
-            // STEP 1: Create FormData (Matching Postman fields exactly)
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('email', email);
-            formData.append('password', password);
-            if (phoneNumber) formData.append('phonenumber', phoneNumber);
-            if (firstName) formData.append('first_name', firstName);
-            if (lastName) formData.append('last_name', lastName);
+            // STEP 1: Create JSON payload
+            const payload = {
+                username: username.trim(),
+                email: email.trim(),
+                password: password,
+            };
+            if (firstName.trim()) payload.first_name = firstName.trim();
+            if (lastName.trim()) payload.last_name = lastName.trim();
 
             console.log(`Hitting URL: ${ENDPOINTS.REGISTER}`);
-            console.log('Signup payload (FormData):', { username, email, phoneNumber });
+            console.log('Signup payload:', { ...payload, password: '***' });
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -43,9 +42,10 @@ const SignUpScreen = ({ navigation }) => {
             const registerResponse = await fetch(ENDPOINTS.REGISTER, {
                 method: 'POST',
                 headers: {
-                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
-                body: formData,
+                body: JSON.stringify(payload),
                 signal: controller.signal,
             });
             clearTimeout(timeoutId);
@@ -64,10 +64,21 @@ const SignUpScreen = ({ navigation }) => {
             }
 
             if (!registerResponse.ok) {
-                const errorMsg = typeof registerData === 'object' 
-                    ? Object.entries(registerData).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
-                    : JSON.stringify(registerData);
-                Alert.alert('Registration Failed', errorMsg || 'Registration failed');
+                let errorMsg = 'Registration failed';
+                if (typeof registerData === 'object' && registerData !== null) {
+                    if (registerData.error) {
+                        errorMsg = registerData.error;
+                    } else if (registerData.detail) {
+                        errorMsg = registerData.detail;
+                    } else {
+                        errorMsg = Object.entries(registerData)
+                            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                            .join('\n');
+                    }
+                } else if (typeof registerData === 'string') {
+                    errorMsg = registerData;
+                }
+                Alert.alert('Registration Failed', errorMsg);
                 setIsLoading(false);
                 return;
             }
@@ -77,11 +88,13 @@ const SignUpScreen = ({ navigation }) => {
             navigation.navigate('Login');
 
         } catch (error) {
-            console.error('\n❌ ========== NETWORK/FETCH ERROR ==========', {
+            console.error('========== NETWORK/FETCH ERROR ==========', {
                 endpoint: ENDPOINTS.REGISTER,
                 username,
                 email,
                 password: password ? '***' : '',
+                firstName,
+                lastName,
                 name: error.name,
                 message: error.message,
                 stack: error.stack,
@@ -121,14 +134,6 @@ const SignUpScreen = ({ navigation }) => {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                placeholderTextColor="#949494"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Phone Number"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
                 placeholderTextColor="#949494"
             />
             <View style={styles.row}>

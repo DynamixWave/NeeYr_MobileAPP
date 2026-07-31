@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import ENDPOINTS from '../../../endpoint/endpoints';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -14,27 +15,29 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      // Replace with your actual Django Login API Endpoint (e.g., JWT or Token Auth)
-      const response = await fetch('https://your-django-api.com/api/login/', {
+      const response = await fetch(ENDPOINTS.LOGIN, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          username: email.trim(),
+          password: password,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Save the token securely here (e.g., using AsyncStorage)
-        // await AsyncStorage.setItem('userToken', data.access);
-        Alert.alert('Success', 'Logged in successfully!');
-        
-        // Navigate to Profile or Home Screen
+        Alert.alert('Success', data.message || 'Logged in successfully!');
         // navigation.navigate('Profile'); 
       } else {
-        Alert.alert('Login Failed', data.detail || 'Invalid credentials');
+        const errorMsg = data.error || data.detail || 'Invalid credentials';
+        Alert.alert('Login Failed', errorMsg);
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert('Error', 'Network request failed. Please check your internet connection.');
     } finally {
       setIsLoading(false);
     }
