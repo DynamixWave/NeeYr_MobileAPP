@@ -3,7 +3,7 @@ const BASE_URL = 'https://apineeyrdirectory.fothubtv.com/api';
 // --------------------------------------------------------
 // API ENDPOINTS (Matching Postman Collection)
 // --------------------------------------------------------
-export default  ENDPOINTS = {
+export default ENDPOINTS = {
   // Auth
   LOGIN: `${BASE_URL}/login/`,   
   REGISTER: BASE_URL + '/register/',
