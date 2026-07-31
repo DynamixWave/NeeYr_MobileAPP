@@ -15,16 +15,16 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
+      const formData = new FormData();
+      formData.append('username', email.trim());
+      formData.append('password', password);
+
       const response = await fetch(ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          username: email.trim(),
-          password: password,
-        }),
+        body: formData,
       });
 
       const data = await response.json();

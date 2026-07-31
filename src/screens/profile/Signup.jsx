@@ -24,28 +24,26 @@ const SignUpScreen = ({ navigation }) => {
         console.log("\n========== STARTING SIGNUP REQUEST ==========");
 
         try {
-            // STEP 1: Create JSON payload
-            const payload = {
-                username: username.trim(),
-                email: email.trim(),
-                password: password,
-            };
-            if (firstName.trim()) payload.first_name = firstName.trim();
-            if (lastName.trim()) payload.last_name = lastName.trim();
+            // STEP 1: Create FormData payload matching Postman collection
+            const formData = new FormData();
+            formData.append('username', username.trim());
+            formData.append('email', email.trim());
+            formData.append('password', password);
+            if (firstName.trim()) formData.append('first_name', firstName.trim());
+            if (lastName.trim()) formData.append('last_name', lastName.trim());
 
             console.log(`Hitting URL: ${ENDPOINTS.REGISTER}`);
-            console.log('Signup payload:', { ...payload, password: '***' });
+            console.log('Signup payload:', { username: username.trim(), email: email.trim(), password: '***' });
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             const registerResponse = await fetch(ENDPOINTS.REGISTER, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify(payload),
+                body: formData,
                 signal: controller.signal,
             });
             clearTimeout(timeoutId);
