@@ -6,7 +6,7 @@ const BASE_URL = 'https://apineeyrdirectory.fothubtv.com/api';
 export default ENDPOINTS = {
   // Auth
   LOGIN: `${BASE_URL}/login/`,   
-  REGISTER: BASE_URL + '/register/',
+  REGISTER: `${BASE_URL}/register/`,
 
   // Users
   USER_LIST: `${BASE_URL}/api/users/`,
@@ -37,9 +37,9 @@ export default ENDPOINTS = {
   OWNER_DETAIL: (id = '') => `${BASE_URL}/api/owners/${id ? id + '/' : ''}`, 
   OWNER_UPDATE: (id = '') => `${BASE_URL}/api/owners/${id ? id + '/update/' : 'update/'}`,
   OWNER_DELETE: (id) => `${BASE_URL}/api/owners/${id}/delete/`,
-  PROFILE: `${BASE_URL}/api/profile/`,
-  PROFILE_CREATE: `${BASE_URL}/api/profile/create/`,
-  PROFILE_UPDATE: `${BASE_URL}/api/profile/update/`,
+  PROFILE: `${BASE_URL}/profile/`,
+  PROFILE_CREATE: `${BASE_URL}/profile/create/`,
+  PROFILE_UPDATE: `${BASE_URL}/profile/update/`,
 
   // Payments & Subscriptions
   PAYMENT_INITIATE: `${BASE_URL}/api/payments/initiate/`,

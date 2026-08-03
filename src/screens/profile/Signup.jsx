@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView
 } from 'react-native';
@@ -42,10 +42,15 @@ const SignUpScreen = ({ navigation }) => {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    // 'User-Agent': 'NeeYrMobileApp/1.0',
+                    'Content-Type': 'application/json',
                 },
-                body: formData,
-                signal: controller.signal,
+                body: JSON.stringify({
+                    username: username.trim(),
+                    email: email.trim(),
+                    password,
+                    first_name: firstName.trim(),
+                    last_name: lastName.trim(),
+                }),
             });
 
             console.log('HTTP Status Code:', registerResponse.status);

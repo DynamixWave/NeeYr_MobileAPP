@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ENDPOINTS from '../../endpoint/endpoints';
 
 const LoginScreen = ({ navigation }) => {
@@ -32,7 +33,23 @@ const LoginScreen = ({ navigation }) => {
 
       if (response.ok) {
         Alert.alert('Success', data.message || 'Logged in successfully!');
-        // navigation.navigate('Profile'); 
+        // Pass the user data from the login response if available, otherwise fallback to the entered email
+        const userObj = data.user || {
+          username: email,
+          email: email,
+        };
+        
+        // Save the bearer token for subsequent API calls
+        const token = data.token || data.access || data.bearer_token;
+        if (token) {
+          await AsyncStorage.setItem('bearer_token', token);
+        }
+        
+        // Navigate back to the Profile tab inside MainTabs
+        navigation.navigate('MainTabs', {
+          screen: 'Profile',
+          params: { user: userObj, token: token }
+        });
       } else {
         const errorMsg = data.error || data.detail || 'Invalid credentials';
         Alert.alert('Login Failed', errorMsg);
