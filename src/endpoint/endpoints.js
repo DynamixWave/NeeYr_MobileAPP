@@ -3,7 +3,7 @@ const BASE_URL = 'https://apineeyrdirectory.fothubtv.com/api';
 // --------------------------------------------------------
 // API ENDPOINTS (Matching Postman Collection)
 // --------------------------------------------------------
-export default ENDPOINTS = {
+const ENDPOINTS = {
   // Auth
   LOGIN: `${BASE_URL}/login/`,   
   REGISTER: `${BASE_URL}/register/`,
@@ -28,6 +28,20 @@ export default ENDPOINTS = {
   USER_UPDATE: (id) => `${BASE_URL}/api/users/${id}/update/`,
   USER_DELETE: (id) => `${BASE_URL}/api/users/${id}/delete/`,
 
+  CATEGORIES: `${BASE_URL}/categories/`,
+
+  // Regions & Cities
+  REGIONS: `${BASE_URL}/regions/`,
+  REGION_DETAIL: (id) => `${BASE_URL}/regions/${id}/`,
+  CITIES: `${BASE_URL}/cities/`,
+
+  // Business Brands, Branches, Images & Social Links
+  BUSINESS_BRANDS: `${BASE_URL}/business-brands/`,
+  BRANCHES: `${BASE_URL}/branches/`,
+  BRANCH_IMAGES: `${BASE_URL}/branch-images/`,
+  BRANCH_SOCIAL_LINKS: `${BASE_URL}/branch-social-links/`,
+
+
   // Groups
   GROUP_LIST: `${BASE_URL}/api/groups/`,
   GROUP_CREATE: `${BASE_URL}/api/groups/create/`,
@@ -35,7 +49,7 @@ export default ENDPOINTS = {
   GROUP_UPDATE: (id) => `${BASE_URL}/api/groups/${id}/update/`,
   GROUP_DELETE: (id) => `${BASE_URL}/api/groups/${id}/delete/`,
 
-  // Permissions
+  // Permissionsn
   PERMISSION_LIST: `${BASE_URL}/api/permissions/`,
   PERMISSION_DETAIL: (id) => `${BASE_URL}/api/permissions/${id}/`,
 
@@ -62,4 +76,6 @@ export default ENDPOINTS = {
   SUBSCRIPTION_HISTORY: `${BASE_URL}/api/subscriptions/history/`,
   WEBHOOK_MMPAY: `${BASE_URL}/api/webhooks/mmpay/`,
 };
+
+export default ENDPOINTS;
 
