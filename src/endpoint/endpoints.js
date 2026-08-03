@@ -8,6 +8,20 @@ export default ENDPOINTS = {
   LOGIN: `${BASE_URL}/login/`,   
   REGISTER: `${BASE_URL}/register/`,
 
+  // Regions
+  REGION_LIST: `${BASE_URL}/regions/`,
+  REGION_CREATE: `${BASE_URL}/regions/create/`,
+  REGION_DETAIL: (id) => `${BASE_URL}/regions/${id}/`,
+  REGION_UPDATE: (id) => `${BASE_URL}/regions/${id}/update/`,
+  REGION_DELETE: (id) => `${BASE_URL}/regions/${id}/delete/`,
+
+  // Cities
+  CITY_LIST: `${BASE_URL}/cities/`,
+  CITY_CREATE: `${BASE_URL}/cities/create/`,
+  CITY_DETAIL: (id) => `${BASE_URL}/cities/${id}/`,
+  CITY_UPDATE: (id) => `${BASE_URL}/cities/${id}/update/`,
+  CITY_DELETE: (id) => `${BASE_URL}/cities/${id}/delete/`,
+
   // Users
   USER_LIST: `${BASE_URL}/api/users/`,
   USER_DETAIL: (id) => `${BASE_URL}/api/users/${id}/`,

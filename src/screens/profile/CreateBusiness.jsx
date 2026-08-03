@@ -2,23 +2,48 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator , Button } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ENDPOINTS from '../../endpoint/endpoints';
+import RegionCitySelector from '../../components/RegionCitySelector';
 
 const CreateBusinessScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [region, setRegion] = useState('');
+  const [city, setCity] = useState('');
+  
+  const [regionError, setRegionError] = useState('');
+  const [cityError, setCityError] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreate = async () => {
+    let isValid = true;
+    setRegionError('');
+    setCityError('');
+
     if (!phoneNumber || !businessName) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+      Alert.alert('Error', 'Please fill in all text fields');
+      isValid = false;
     }
+
+    if (!region) {
+      setRegionError('Region / State is required');
+      isValid = false;
+    }
+    
+    if (region && !city) {
+      setCityError('City is required');
+      isValid = false;
+    }
+
+    if (!isValid) return;
 
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append('phone_number', phoneNumber);
       formData.append('business_name', businessName);
+      formData.append('region', region);
+      formData.append('city', city);
 
       const response = await fetch(ENDPOINTS.PROFILE_CREATE, {
         method: 'POST',
@@ -76,6 +101,15 @@ const CreateBusinessScreen = ({ navigation }) => {
         value={businessName}
         onChangeText={setBusinessName}
         placeholderTextColor="#949494"
+      />
+
+      <RegionCitySelector
+        selectedRegionId={region}
+        selectedCityId={city}
+        onRegionChange={(id) => { setRegion(id); setRegionError(''); }}
+        onCityChange={(id) => { setCity(id); setCityError(''); }}
+        regionError={regionError}
+        cityError={cityError}
       />
 
       <View style={styles.container}>

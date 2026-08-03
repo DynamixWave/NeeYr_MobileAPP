@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Button, Image } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ENDPOINTS from '../../endpoint/endpoints';
+import RegionCitySelector from '../../components/RegionCitySelector';
 
 const ProfileUpdateScreen = ({ navigation, route }) => {
   // Pre-fill with existing data passed through navigation params
@@ -9,20 +10,49 @@ const ProfileUpdateScreen = ({ navigation, route }) => {
 
   const [phoneNumber, setPhoneNumber] = useState(profileData?.phone_number || '');
   const [businessName, setBusinessName] = useState(profileData?.business_name || '');
+  
+  // Extract UUID if region/city is an object, otherwise use the string/uuid directly
+  const initialRegion = profileData?.region?.id || profileData?.region || '';
+  const initialCity = profileData?.city?.id || profileData?.city || '';
+  
+  const [region, setRegion] = useState(initialRegion);
+  const [city, setCity] = useState(initialCity);
+  
+  const [regionError, setRegionError] = useState('');
+  const [cityError, setCityError] = useState('');
+
   const [logo, setLogo] = useState(null); // Will store the selected image
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUpdate = async () => {
+    let isValid = true;
+    setRegionError('');
+    setCityError('');
+
     if (!phoneNumber || !businessName) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+      Alert.alert('Error', 'Please fill in all required text fields');
+      isValid = false;
     }
+
+    if (!region) {
+      setRegionError('Region / State is required');
+      isValid = false;
+    }
+    
+    if (region && !city) {
+      setCityError('City is required');
+      isValid = false;
+    }
+
+    if (!isValid) return;
 
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append('phone_number', phoneNumber);
       formData.append('business_name', businessName);
+      formData.append('region', region);
+      formData.append('city', city);
       
       if (logo) {
         formData.append('logo', {
@@ -89,6 +119,15 @@ const ProfileUpdateScreen = ({ navigation, route }) => {
         onChangeText={setPhoneNumber}
         keyboardType="phone-pad"
         placeholderTextColor="#949494"
+      />
+
+      <RegionCitySelector
+        selectedRegionId={region}
+        selectedCityId={city}
+        onRegionChange={(id) => { setRegion(id); setRegionError(''); }}
+        onCityChange={(id) => { setCity(id); setCityError(''); }}
+        regionError={regionError}
+        cityError={cityError}
       />
 
       <View style={styles.imagePickerContainer}>
