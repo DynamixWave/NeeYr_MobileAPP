@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,17 +6,35 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Modal,
   SafeAreaView,
   StatusBar,
-  Animated,
-  LayoutAnimation,
+  ActivityIndicator,
+  RefreshControl,
+  Image,
   Platform,
   UIManager,
+  LayoutAnimation,
 } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUtensils } from '@fortawesome/free-solid-svg-icons/faUtensils';
+import { faFire } from '@fortawesome/free-solid-svg-icons/faFire';
 import { faBagShopping } from '@fortawesome/free-solid-svg-icons/faBagShopping';
+import { faBreadSlice } from '@fortawesome/free-solid-svg-icons/faBreadSlice';
+import { faBook } from '@fortawesome/free-solid-svg-icons/faBook';
+import { faMugHot } from '@fortawesome/free-solid-svg-icons/faMugHot';
+import { faShirt } from '@fortawesome/free-solid-svg-icons/faShirt';
+import { faStore } from '@fortawesome/free-solid-svg-icons/faStore';
+import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons/faWandMagicSparkles';
+import { faIceCream } from '@fortawesome/free-solid-svg-icons/faIceCream';
+import { faTv } from '@fortawesome/free-solid-svg-icons/faTv';
+import { faBurger } from '@fortawesome/free-solid-svg-icons/faBurger';
+import { faBowlFood } from '@fortawesome/free-solid-svg-icons/faBowlFood';
+import { faGem } from '@fortawesome/free-solid-svg-icons/faGem';
+import { faMobileScreenButton } from '@fortawesome/free-solid-svg-icons/faMobileScreenButton';
+import { faPizzaSlice } from '@fortawesome/free-solid-svg-icons/faPizzaSlice';
+import { faFish } from '@fortawesome/free-solid-svg-icons/faFish';
+import { faShoePrints } from '@fortawesome/free-solid-svg-icons/faShoePrints';
+import { faCartShopping } from '@fortawesome/free-solid-svg-icons/faCartShopping';
 import { faScissors } from '@fortawesome/free-solid-svg-icons/faScissors';
 import { faHeartPulse } from '@fortawesome/free-solid-svg-icons/faHeartPulse';
 import { faCar } from '@fortawesome/free-solid-svg-icons/faCar';
@@ -25,317 +43,276 @@ import { faGraduationCap } from '@fortawesome/free-solid-svg-icons/faGraduationC
 import { faCoins } from '@fortawesome/free-solid-svg-icons/faCoins';
 import { faFilm } from '@fortawesome/free-solid-svg-icons/faFilm';
 import { faPlane } from '@fortawesome/free-solid-svg-icons/faPlane';
+import { faTags } from '@fortawesome/free-solid-svg-icons/faTags';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faChevronUp } from '@fortawesome/free-solid-svg-icons/faChevronUp';
-import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons/faChevronRight';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
-import { faCheckDouble } from '@fortawesome/free-solid-svg-icons/faCheckDouble';
-import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
-import { faSliders } from '@fortawesome/free-solid-svg-icons/faSliders';
+import { faRotateRight } from '@fortawesome/free-solid-svg-icons/faRotateRight';
+import { faStore as faStoreIcon } from '@fortawesome/free-solid-svg-icons/faStore';
+import ENDPOINTS from '../../endpoint/endpoints';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Category Data Definition
-export const CATEGORY_DATA = [
-  {
-    id: 'food_drink',
-    title: 'Food & Drink',
-    icon: faUtensils,
-    color: '#FF6B6B',
-    bgColor: '#FFF0F0',
-    subcategories: [
-      'Cafe',
-      'Tea shop',
-      'Bakery',
-      'BBQ',
-      'Hot Pot',
-      'Bubble Tea',
-      'Dessert shop',
-    ],
-  },
-  {
-    id: 'shopping',
-    title: 'Shopping',
-    icon: faBagShopping,
-    color: '#2EC4B6',
-    bgColor: '#E6FAF8',
-    subcategories: [
-      'Clothing',
-      'Shoes',
-      'Bags',
-      'Jewelry',
-      'Cosmetics',
-      'Convenience store',
-      'Book Store',
-      'Electronics',
-    ],
-  },
-  {
-    id: 'beauty',
-    title: 'Beauty',
-    icon: faScissors,
-    color: '#FF85A1',
-    bgColor: '#FFF0F4',
-    subcategories: [
-      'Hair salon',
-      'Barber',
-      'Spa',
-      'Nail salon',
-      'Beauty clinic',
-      'Tattoo Studio',
-    ],
-  },
-  {
-    id: 'health',
-    title: 'Health',
-    icon: faHeartPulse,
-    color: '#3A86EF',
-    bgColor: '#EBF2FE',
-    subcategories: [
-      'Clinic',
-      'Dental Clinic',
-      'Pharmacy',
-      'Hospital',
-    ],
-  },
-  {
-    id: 'automotive',
-    title: 'Automotive',
-    icon: faCar,
-    color: '#FF9F43',
-    bgColor: '#FFF5EB',
-    subcategories: [
-      'Car showroom',
-      'Repair shop',
-      'Tire shop',
-      'Car wash',
-    ],
-  },
-  {
-    id: 'home_living',
-    title: 'Home Living',
-    icon: faHouse,
-    color: '#6C5CE7',
-    bgColor: '#F0EEFD',
-    subcategories: [
-      'Furniture',
-      'Hardware store',
-      'Construction materials',
-    ],
-  },
-  {
-    id: 'education',
-    title: 'Education',
-    icon: faGraduationCap,
-    color: '#8E44AD',
-    bgColor: '#F4ECF7',
-    subcategories: [
-      'University',
-      'Language center',
-      'Music school',
-    ],
-  },
-  {
-    id: 'finance',
-    title: 'Finance',
-    icon: faCoins,
-    color: '#F1C40F',
-    bgColor: '#FEFCE8',
-    subcategories: [
-      'Insurance',
-      'Money exchange',
-    ],
-  },
-  {
-    id: 'entertainment',
-    title: 'Entertainment',
-    icon: faFilm,
-    color: '#E056FD',
-    bgColor: '#FCEBFF',
-    subcategories: [
-      'Cinema',
-      'Karaoke',
-      'Gym',
-      'Swimming pool',
-      'Theme park',
-    ],
-  },
-  {
-    id: 'travel',
-    title: 'Travel',
-    icon: faPlane,
-    color: '#00CEC9',
-    bgColor: '#E6FAF9',
-    subcategories: [
-      'Hotel',
-      'Motel',
-      'Travel agency',
-      'Car rental',
-    ],
-  },
+// Fallback Color Palette
+const PALETTE = [
+  { color: '#4F46E5', bgColor: '#EEF2FF' },
+  { color: '#0EA5E9', bgColor: '#E0F2FE' },
+  { color: '#10B981', bgColor: '#D1FAE5' },
+  { color: '#F59E0B', bgColor: '#FEF3C7' },
+  { color: '#EC4899', bgColor: '#FCE7F3' },
+  { color: '#8B5CF6', bgColor: '#EDE9FE' },
+  { color: '#14B8A6', bgColor: '#CCFBF1' },
+  { color: '#F97316', bgColor: '#FFEDD5' },
 ];
 
-const CategoryScreen = ({ onSelectCategory }) => {
-  // State for selected subcategories: key format "categoryId:subCategoryName"
-  const [selectedOptions, setSelectedOptions] = useState({});
-  // Track expanded state of category accordions
-  const [expandedCategories, setExpandedCategories] = useState({
-    food_drink: true,
-    shopping: true,
-  });
-  // Search query
+// Helper function to resolve specific FontAwesome icon & color theme based on category name
+const getCategoryTheme = (name = '', index = 0) => {
+  const lowerName = name.toLowerCase().trim();
+
+  if (lowerName.includes('bbq') || lowerName.includes('barbecue') || lowerName.includes('grill')) {
+    return { icon: faFire, color: '#EF4444', bgColor: '#FEE2E2' };
+  }
+  if (lowerName.includes('bag')) {
+    return { icon: faBagShopping, color: '#0EA5E9', bgColor: '#E0F2FE' };
+  }
+  if (lowerName.includes('baker') || lowerName.includes('bread') || lowerName.includes('cake')) {
+    return { icon: faBreadSlice, color: '#D97706', bgColor: '#FEF3C7' };
+  }
+  if (lowerName.includes('book')) {
+    return { icon: faBook, color: '#8B5CF6', bgColor: '#EDE9FE' };
+  }
+  if (lowerName.includes('bubble tea') || lowerName.includes('boba')) {
+    return { icon: faMugHot, color: '#EC4899', bgColor: '#FCE7F3' };
+  }
+  if (lowerName.includes('cafe') || lowerName.includes('coffee') || lowerName.includes('tea')) {
+    return { icon: faMugHot, color: '#B45309', bgColor: '#FEF3C7' };
+  }
+  if (lowerName.includes('cloth') || lowerName.includes('apparel') || lowerName.includes('fashion')) {
+    return { icon: faShirt, color: '#4F46E5', bgColor: '#EEF2FF' };
+  }
+  if (lowerName.includes('convenience') || lowerName.includes('mart')) {
+    return { icon: faStore, color: '#10B981', bgColor: '#D1FAE5' };
+  }
+  if (lowerName.includes('cosmetic') || lowerName.includes('beauty') || lowerName.includes('makeup')) {
+    return { icon: faWandMagicSparkles, color: '#F43F5E', bgColor: '#FFE4E6' };
+  }
+  if (lowerName.includes('dessert') || lowerName.includes('ice cream') || lowerName.includes('sweets')) {
+    return { icon: faIceCream, color: '#F472B6', bgColor: '#FCE7F3' };
+  }
+  if (lowerName.includes('electronic') || lowerName.includes('tech') || lowerName.includes('device')) {
+    return { icon: faTv, color: '#3B82F6', bgColor: '#DBEAFE' };
+  }
+  if (lowerName.includes('fast food') || lowerName.includes('burger')) {
+    return { icon: faBurger, color: '#F59E0B', bgColor: '#FEF3C7' };
+  }
+  if (lowerName.includes('hot pot') || lowerName.includes('soup')) {
+    return { icon: faBowlFood, color: '#DC2626', bgColor: '#FEE2E2' };
+  }
+  if (lowerName.includes('jewel') || lowerName.includes('diamond') || lowerName.includes('gold')) {
+    return { icon: faGem, color: '#EAB308', bgColor: '#FEF9C3' };
+  }
+  if (lowerName.includes('mobile') || lowerName.includes('phone') || lowerName.includes('smartphone')) {
+    return { icon: faMobileScreenButton, color: '#6366F1', bgColor: '#EEF2FF' };
+  }
+  if (lowerName.includes('pizza')) {
+    return { icon: faPizzaSlice, color: '#F97316', bgColor: '#FFEDD5' };
+  }
+  if (lowerName.includes('restaurant') || lowerName.includes('food') || lowerName.includes('dine')) {
+    return { icon: faUtensils, color: '#EA580C', bgColor: '#FFEDD5' };
+  }
+  if (lowerName.includes('seafood') || lowerName.includes('fish')) {
+    return { icon: faFish, color: '#0284C7', bgColor: '#E0F2FE' };
+  }
+  if (lowerName.includes('shoe') || lowerName.includes('footwear')) {
+    return { icon: faShoePrints, color: '#475569', bgColor: '#F1F5F9' };
+  }
+  if (lowerName.includes('supermarket') || lowerName.includes('shopping') || lowerName.includes('market')) {
+    return { icon: faCartShopping, color: '#059669', bgColor: '#D1FAE5' };
+  }
+  if (lowerName.includes('salon') || lowerName.includes('hair') || lowerName.includes('barber')) {
+    return { icon: faScissors, color: '#EC4899', bgColor: '#FCE7F3' };
+  }
+  if (lowerName.includes('health') || lowerName.includes('clinic') || lowerName.includes('hospital') || lowerName.includes('pharmacy')) {
+    return { icon: faHeartPulse, color: '#0284C7', bgColor: '#E0F2FE' };
+  }
+  if (lowerName.includes('car') || lowerName.includes('auto') || lowerName.includes('vehicle') || lowerName.includes('repair')) {
+    return { icon: faCar, color: '#F97316', bgColor: '#FFEDD5' };
+  }
+  if (lowerName.includes('home') || lowerName.includes('furniture') || lowerName.includes('living')) {
+    return { icon: faHouse, color: '#8B5CF6', bgColor: '#EDE9FE' };
+  }
+  if (lowerName.includes('education') || lowerName.includes('school') || lowerName.includes('university')) {
+    return { icon: faGraduationCap, color: '#6D28D9', bgColor: '#EDE9FE' };
+  }
+  if (lowerName.includes('finance') || lowerName.includes('money') || lowerName.includes('bank') || lowerName.includes('insurance')) {
+    return { icon: faCoins, color: '#D97706', bgColor: '#FEF3C7' };
+  }
+  if (lowerName.includes('entertainment') || lowerName.includes('cinema') || lowerName.includes('movie') || lowerName.includes('gym')) {
+    return { icon: faFilm, color: '#DB2777', bgColor: '#FCE7F3' };
+  }
+  if (lowerName.includes('travel') || lowerName.includes('hotel') || lowerName.includes('flight')) {
+    return { icon: faPlane, color: '#06B6D4', bgColor: '#CFFAFE' };
+  }
+
+  const fallback = PALETTE[index % PALETTE.length];
+  return { icon: faTags, color: fallback.color, bgColor: fallback.bgColor };
+};
+
+const CategoryScreen = ({ navigation }) => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  // Summary modal visibility
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // Toggle single subcategory selection box
-  const toggleSubcategory = (categoryId, subName) => {
-    const key = `${categoryId}:${subName}`;
-    setSelectedOptions((prev) => {
-      const updated = { ...prev };
-      if (updated[key]) {
-        delete updated[key];
-      } else {
-        updated[key] = { categoryId, subName };
+  // Fetch categories from API
+  const fetchCategories = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      const url = ENDPOINTS.CATEGORIES.includes('?')
+        ? `${ENDPOINTS.CATEGORIES}&page_size=100`
+        : `${ENDPOINTS.CATEGORIES}?page_size=100`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`);
       }
-      return updated;
-    });
-  };
 
-  // Toggle entire main category (Select All / Deselect All subcategories for that main category)
-  const toggleMainCategory = (category) => {
-    const categorySubKeys = category.subcategories.map(
-      (sub) => `${category.id}:${sub}`
-    );
-    const allSelected = categorySubKeys.every((key) => selectedOptions[key]);
+      const json = await response.json();
+      let list = [];
+      if (Array.isArray(json)) {
+        list = json;
+      } else if (json && Array.isArray(json.results)) {
+        list = json.results;
+      } else if (json && Array.isArray(json.data)) {
+        list = json.data;
+      }
 
-    setSelectedOptions((prev) => {
-      const updated = { ...prev };
-      categorySubKeys.forEach((key, index) => {
-        if (allSelected) {
-          delete updated[key];
-        } else {
-          updated[key] = {
-            categoryId: category.id,
-            subName: category.subcategories[index],
-          };
-        }
+      const formattedList = list.map((item, index) => {
+        const catName = item.name || item.title || 'Unnamed Category';
+        const theme = getCategoryTheme(catName, index);
+
+        let subcategories = Array.isArray(item.subcategories)
+          ? item.subcategories
+          : Array.isArray(item.children)
+          ? item.children
+          : [];
+        
+        // Sort subcategories alphabetically
+        subcategories = [...subcategories].sort((a, b) => {
+          const nameA = typeof a === 'string' ? a : a.name || '';
+          const nameB = typeof b === 'string' ? b : b.name || '';
+          return nameA.localeCompare(nameB);
+        });
+
+        return {
+          id: item.id || String(index),
+          name: catName,
+          imageIcon: item.icon || item.image || null,
+          fontAwesomeIcon: theme.icon,
+          color: theme.color,
+          bgColor: theme.bgColor,
+          subcategories: subcategories,
+        };
       });
-      return updated;
+
+      // Sort categories alphabetically
+      formattedList.sort((a, b) => a.name.localeCompare(b.name));
+
+      setCategories(formattedList);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+      setError(err.message || 'Failed to load categories.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Navigate to Shops screen
+  const navigateToShops = (cat) => {
+    navigation.navigate('Shops', {
+      categoryId: cat.id,
+      categoryName: cat.name,
     });
   };
 
-  // Toggle expansion of a category card
-  const toggleExpand = (categoryId) => {
+  // Toggle accordion expansion
+  const toggleExpand = (catId) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedCategories((prev) => ({
       ...prev,
-      [categoryId]: !prev[categoryId],
+      [catId]: !prev[catId],
     }));
   };
 
-  // Expand or Collapse all categories
-  const toggleExpandAll = (expand) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const updated = {};
-    CATEGORY_DATA.forEach((cat) => {
-      updated[cat.id] = expand;
-    });
-    setExpandedCategories(updated);
-  };
-
-  // Select All Subcategories across all categories
-  const selectAll = () => {
-    const updated = {};
-    CATEGORY_DATA.forEach((cat) => {
-      cat.subcategories.forEach((sub) => {
-        updated[`${cat.id}:${sub}`] = { categoryId: cat.id, subName: sub };
-      });
-    });
-    setSelectedOptions(updated);
-  };
-
-  // Clear all selections
-  const clearAll = () => {
-    setSelectedOptions({});
-  };
-
-  // Filter categories based on search input
+  // Filtered categories
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return CATEGORY_DATA;
+    if (!searchQuery.trim()) return categories;
 
     const query = searchQuery.toLowerCase().trim();
-    return CATEGORY_DATA.map((cat) => {
-      const titleMatch = cat.title.toLowerCase().includes(query);
-      const matchingSubs = cat.subcategories.filter((sub) =>
-        sub.toLowerCase().includes(query)
-      );
+    return categories.map((cat) => {
+      const nameMatch = cat.name.toLowerCase().includes(query);
+      const matchingSubs = cat.subcategories.filter((sub) => {
+        const subName = typeof sub === 'string' ? sub : sub.name || '';
+        return subName.toLowerCase().includes(query);
+      });
 
-      if (titleMatch || matchingSubs.length > 0) {
+      if (nameMatch || matchingSubs.length > 0) {
         return {
           ...cat,
-          subcategories: titleMatch ? cat.subcategories : matchingSubs,
+          subcategories: nameMatch ? cat.subcategories : matchingSubs,
         };
       }
       return null;
     }).filter(Boolean);
-  }, [searchQuery]);
-
-  // Selected count computation
-  const totalSelectedCount = Object.keys(selectedOptions).length;
-
-  // Group selected options by main category title for clean display
-  const selectedSummary = useMemo(() => {
-    const summary = {};
-    Object.values(selectedOptions).forEach(({ categoryId, subName }) => {
-      const cat = CATEGORY_DATA.find((c) => c.id === categoryId);
-      if (cat) {
-        if (!summary[cat.title]) {
-          summary[cat.title] = {
-            icon: cat.icon,
-            color: cat.color,
-            bgColor: cat.bgColor,
-            items: [],
-          };
-        }
-        summary[cat.title].items.push(subName);
-      }
-    });
-    return summary;
-  }, [selectedOptions]);
+  }, [categories, searchQuery]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
       <View style={styles.container}>
-        {/* Header Title Section */}
+        {/* Header Section */}
         <View style={styles.headerContainer}>
           <View>
-            <Text style={styles.headerTitle}>Categories & Options</Text>
+            <Text style={styles.headerTitle}>Categories</Text>
             <Text style={styles.headerSubtitle}>
-              Select main and sub-categories below
+              Tap any category to view shops
             </Text>
           </View>
-          {totalSelectedCount > 0 && (
-            <View style={styles.totalBadge}>
-              <Text style={styles.totalBadgeText}>
-                {totalSelectedCount} Selected
-              </Text>
-            </View>
-          )}
+
+          <TouchableOpacity
+            style={styles.allShopsButton}
+            onPress={() => navigation.navigate('Shops')}
+          >
+            <FontAwesomeIcon icon={faStoreIcon} size={14} color="#FFFFFF" />
+            <Text style={styles.allShopsButtonText}>All Shops</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Search Bar & Quick Controls */}
+        {/* Search Bar */}
         <View style={styles.searchSection}>
           <View style={styles.searchBarContainer}>
             <FontAwesomeIcon icon={faMagnifyingGlass} size={16} color="#94A3B8" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search category or subcategory..."
+              placeholder="Search category..."
               placeholderTextColor="#94A3B8"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -346,276 +323,144 @@ const CategoryScreen = ({ onSelectCategory }) => {
               </TouchableOpacity>
             )}
           </View>
-
-          {/* Action Row */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={styles.actionChip}
-              onPress={() => toggleExpandAll(true)}
-            >
-              <Text style={styles.actionChipText}>Expand All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionChip}
-              onPress={() => toggleExpandAll(false)}
-            >
-              <Text style={styles.actionChipText}>Collapse All</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionChipPrimary} onPress={selectAll}>
-              <FontAwesomeIcon icon={faCheckDouble} size={12} color="#4F46E5" />
-              <Text style={styles.actionChipPrimaryText}>Select All</Text>
-            </TouchableOpacity>
-
-            {totalSelectedCount > 0 && (
-              <TouchableOpacity style={styles.actionChipDanger} onPress={clearAll}>
-                <FontAwesomeIcon icon={faTrashCan} size={12} color="#EF4444" />
-                <Text style={styles.actionChipDangerText}>Clear</Text>
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
 
-        {/* Main Categories & Option Boxes List */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {filteredCategories.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <FontAwesomeIcon icon={faSliders} size={48} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No categories found</Text>
-              <Text style={styles.emptySubtext}>Try searching with a different term</Text>
-            </View>
-          ) : (
-            filteredCategories.map((category) => {
-              const isExpanded =
-                expandedCategories[category.id] || searchQuery.length > 0;
-              const subKeys = category.subcategories.map(
-                (sub) => `${category.id}:${sub}`
-              );
-              const selectedSubCount = subKeys.filter(
-                (key) => selectedOptions[key]
-              ).length;
-              const isAllSubSelected =
-                subKeys.length > 0 && selectedSubCount === subKeys.length;
-              const isPartiallySelected =
-                selectedSubCount > 0 && !isAllSubSelected;
-
-              return (
-                <View key={category.id} style={styles.categoryCard}>
-                  {/* Category Header Bar Option Box */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    style={[
-                      styles.categoryHeader,
-                      isExpanded && styles.categoryHeaderExpanded,
-                    ]}
-                    onPress={() => toggleExpand(category.id)}
-                  >
-                    <View style={styles.categoryTitleGroup}>
-                      <View
-                        style={[
-                          styles.iconContainer,
-                          { backgroundColor: category.bgColor },
-                        ]}
-                      >
-                        <FontAwesomeIcon
-                          icon={category.icon}
-                          size={18}
-                          color={category.color}
-                        />
-                      </View>
-                      <View style={styles.titleTextWrapper}>
-                        <Text style={styles.categoryTitleText}>
-                          {category.title}
-                        </Text>
-                        <Text style={styles.categoryCountText}>
-                          {category.subcategories.length} sub-categories
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.headerRightActions}>
-                      {/* Select All in Category Button */}
-                      <TouchableOpacity
-                        style={[
-                          styles.mainCategoryCheckbox,
-                          isAllSubSelected && {
-                            backgroundColor: category.color,
-                            borderColor: category.color,
-                          },
-                          isPartiallySelected && {
-                            borderColor: category.color,
-                            backgroundColor: category.bgColor,
-                          },
-                        ]}
-                        onPress={() => toggleMainCategory(category)}
-                      >
-                        {isAllSubSelected && (
-                          <FontAwesomeIcon icon={faCheck} size={12} color="#FFFFFF" />
-                        )}
-                        {isPartiallySelected && (
-                          <View
-                            style={[
-                              styles.partialDot,
-                              { backgroundColor: category.color },
-                            ]}
-                          />
-                        )}
-                      </TouchableOpacity>
-
-                      {/* Expand / Collapse Chevron */}
-                      <FontAwesomeIcon
-                        icon={isExpanded ? faChevronUp : faChevronDown}
-                        size={14}
-                        color="#64748B"
-                        style={{ marginLeft: 12 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Sub-categories Option Box Grid */}
-                  {isExpanded && (
-                    <View style={styles.subCategoryGrid}>
-                      {category.subcategories.map((subName) => {
-                        const optionKey = `${category.id}:${subName}`;
-                        const isSelected = !!selectedOptions[optionKey];
-
-                        return (
-                          <TouchableOpacity
-                            key={optionKey}
-                            activeOpacity={0.7}
-                            style={[
-                              styles.optionBox,
-                              isSelected && {
-                                borderColor: category.color,
-                                backgroundColor: category.bgColor,
-                              },
-                            ]}
-                            onPress={() => toggleSubcategory(category.id, subName)}
-                          >
-                            <View
-                              style={[
-                                styles.checkbox,
-                                isSelected && {
-                                  backgroundColor: category.color,
-                                  borderColor: category.color,
-                                },
-                              ]}
-                            >
-                              {isSelected && (
-                                <FontAwesomeIcon
-                                  icon={faCheck}
-                                  size={10}
-                                  color="#FFFFFF"
-                                />
-                              )}
-                            </View>
-                            <Text
-                              style={[
-                                styles.optionText,
-                                isSelected && {
-                                  color: '#0F172A',
-                                  fontWeight: '600',
-                                },
-                              ]}
-                            >
-                              {subName}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-
-        {/* Bottom Floating Bar when Options are Selected */}
-        {totalSelectedCount > 0 && (
-          <View style={styles.bottomBar}>
-            <View style={styles.bottomBarInfo}>
-              <Text style={styles.bottomBarTitle}>
-                {totalSelectedCount} Option{totalSelectedCount > 1 ? 's' : ''} Selected
-              </Text>
-              <Text style={styles.bottomBarSub}>
-                Ready for submission or filtering
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={() => setIsModalVisible(true)}
-            >
-              <Text style={styles.submitButtonText}>View Summary</Text>
+        {/* Categories List */}
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+            <Text style={styles.loadingText}>Fetching categories...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.centerContainer}>
+            <Text style={styles.errorTitle}>Error Loading Categories</Text>
+            <Text style={styles.errorSubtext}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => fetchCategories()}>
+              <FontAwesomeIcon icon={faRotateRight} size={14} color="#FFFFFF" />
+              <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        {/* Summary Modal */}
-        <Modal
-          visible={isModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Selected Categories</Text>
-                <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                  <FontAwesomeIcon icon={faXmark} size={20} color="#64748B" />
-                </TouchableOpacity>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => fetchCategories(true)}
+                colors={['#4F46E5']}
+              />
+            }
+          >
+            {filteredCategories.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <FontAwesomeIcon icon={faTags} size={44} color="#CBD5E1" />
+                <Text style={styles.emptyText}>No categories found</Text>
+                <Text style={styles.emptySubtext}>
+                  {searchQuery ? 'Try searching with a different term' : 'No categories available'}
+                </Text>
               </View>
+            ) : (
+              filteredCategories.map((category) => {
+                const hasSub = category.subcategories && category.subcategories.length > 0;
+                const isExpanded = expandedCategories[category.id] || searchQuery.length > 0;
 
-              <ScrollView style={styles.modalScroll}>
-                {Object.entries(selectedSummary).map(([catTitle, group]) => (
-                  <View key={catTitle} style={styles.summaryGroup}>
-                    <View style={styles.summaryGroupHeader}>
-                      <View
-                        style={[
-                          styles.summaryIconBox,
-                          { backgroundColor: group.bgColor },
-                        ]}
-                      >
-                        <FontAwesomeIcon
-                          icon={group.icon}
-                          size={14}
-                          color={group.color}
-                        />
-                      </View>
-                      <Text style={styles.summaryGroupTitle}>{catTitle}</Text>
-                    </View>
-
-                    <View style={styles.summaryTagsRow}>
-                      {group.items.map((subName) => (
-                        <View key={subName} style={styles.summaryTag}>
-                          <Text style={styles.summaryTagText}>{subName}</Text>
+                return (
+                  <View key={category.id} style={styles.categoryCard}>
+                    {/* Category Button Header */}
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      style={[
+                        styles.categoryHeader,
+                        hasSub && isExpanded && styles.categoryHeaderExpanded,
+                      ]}
+                      onPress={() => navigateToShops(category)}
+                    >
+                      <View style={styles.categoryTitleGroup}>
+                        <View style={[styles.iconContainer, { backgroundColor: category.bgColor }]}>
+                          {category.imageIcon ? (
+                            <Image
+                              source={{ uri: category.imageIcon }}
+                              style={styles.categoryIconImage}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <FontAwesomeIcon
+                              icon={category.fontAwesomeIcon}
+                              size={18}
+                              color={category.color}
+                            />
+                          )}
                         </View>
-                      ))}
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
 
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={styles.modalConfirmButton}
-                  onPress={() => {
-                    setIsModalVisible(false);
-                    if (onSelectCategory) {
-                      onSelectCategory(selectedOptions);
-                    }
-                  }}
-                >
-                  <Text style={styles.modalConfirmButtonText}>Confirm Selection</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+                        <View style={styles.titleTextWrapper}>
+                          <Text style={styles.categoryTitleText}>{category.name}</Text>
+                          {hasSub && (
+                            <Text style={styles.categoryCountText}>
+                              {category.subcategories.length} sub-categories
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+
+                      <View style={styles.headerRightActions}>
+                        {hasSub && (
+                          <TouchableOpacity
+                            style={styles.expandButton}
+                            onPress={() => toggleExpand(category.id)}
+                          >
+                            <FontAwesomeIcon
+                              icon={isExpanded ? faChevronUp : faChevronDown}
+                              size={14}
+                              color="#64748B"
+                            />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          style={[styles.shopActionButton, { backgroundColor: category.bgColor }]}
+                          onPress={() => navigateToShops(category)}
+                        >
+                          <Text style={[styles.shopActionButtonText, { color: category.color }]}>
+                            View Shops
+                          </Text>
+                          <FontAwesomeIcon
+                            icon={faChevronRight}
+                            size={11}
+                            color={category.color}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Subcategories */}
+                    {hasSub && isExpanded && (
+                      <View style={styles.subCategoryGrid}>
+                        {category.subcategories.map((subItem, idx) => {
+                          const subName = typeof subItem === 'string' ? subItem : subItem.name;
+                          const subTheme = getCategoryTheme(subName, idx);
+                          return (
+                            <TouchableOpacity
+                              key={idx}
+                              activeOpacity={0.7}
+                              style={styles.subCategoryButton}
+                              onPress={() => navigateToShops(category)}
+                            >
+                              <View style={[styles.subIconContainer, { backgroundColor: subTheme.bgColor }]}>
+                                <FontAwesomeIcon icon={subTheme.icon} size={12} color={subTheme.color} />
+                              </View>
+                              <Text style={styles.subCategoryButtonText}>{subName}</Text>
+                              <FontAwesomeIcon icon={faChevronRight} size={10} color="#94A3B8" />
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -651,13 +496,16 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
-  totalBadge: {
+  allShopsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#4F46E5',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
   },
-  totalBadgeText: {
+  allShopsButtonText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
@@ -688,66 +536,58 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     paddingVertical: 0,
   },
-  actionRow: {
-    flexDirection: 'row',
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    flexWrap: 'wrap',
-    gap: 6,
+    paddingHorizontal: 30,
   },
-  actionChip: {
-    backgroundColor: '#E2E8F0',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+  loadingText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 12,
+    fontWeight: '500',
   },
-  actionChipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  actionChipPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    gap: 4,
-  },
-  actionChipPrimaryText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4F46E5',
-  },
-  actionChipDanger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    gap: 4,
-  },
-  actionChipDangerText: {
-    fontSize: 11,
+  errorTitle: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#EF4444',
+    marginBottom: 6,
+  },
+  errorSubtext: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   categoryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 14,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
     overflow: 'hidden',
   },
@@ -768,11 +608,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  categoryIconImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
   },
   titleTextWrapper: {
     marginLeft: 12,
@@ -791,20 +636,22 @@ const styles = StyleSheet.create({
   headerRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  mainCategoryCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
+  expandButton: {
+    padding: 6,
+  },
+  shopActionButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    gap: 4,
   },
-  partialDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  shopActionButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   subCategoryGrid: {
     flexDirection: 'row',
@@ -813,37 +660,37 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#FAFAFA',
   },
-  optionBox: {
+  subCategoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     minWidth: '47%',
     flexGrow: 1,
+    justifyContent: 'space-between',
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: '#94A3B8',
+  subIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
   },
-  optionText: {
+  subCategoryButtonText: {
     fontSize: 13,
-    color: '#475569',
+    color: '#334155',
+    fontWeight: '600',
     flex: 1,
+    marginLeft: 8,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 50,
+    paddingVertical: 60,
   },
   emptyText: {
     fontSize: 16,
@@ -855,130 +702,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94A3B8',
     marginTop: 4,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  bottomBarInfo: {
-    flex: 1,
-  },
-  bottomBarTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  bottomBarSub: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  submitButton: {
-    backgroundColor: '#4F46E5',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  modalScroll: {
-    marginVertical: 16,
-  },
-  summaryGroup: {
-    marginBottom: 16,
-  },
-  summaryGroupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  summaryIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  summaryGroupTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  summaryTagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingLeft: 34,
-  },
-  summaryTag: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  summaryTagText: {
-    fontSize: 12,
-    color: '#334155',
-    fontWeight: '500',
-  },
-  modalFooter: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  modalConfirmButton: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  modalConfirmButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });
