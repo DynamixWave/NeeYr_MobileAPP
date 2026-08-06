@@ -7,6 +7,7 @@ import CreateBusinessScreen from '../screens/profile/CreateBusiness';
 import CreateShopScreen from '../screens/profile/CreateShop';
 import ProfileUpdateScreen from '../screens/profile/ProfileUpdate';
 import ShopsScreen from '../screens/category/shops';
+import BranchDetailScreen from '../screens/category/BranchDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ const MainStack = () => {
       <Stack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
       <Stack.Screen name="CreateShop" component={CreateShopScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdateScreen} />
+      <Stack.Screen name="BranchDetail" component={BranchDetailScreen} />
     </Stack.Navigator>
   );
 };

@@ -249,7 +249,11 @@ const ShopsScreen = ({ route, navigation }) => {
   // Render individual Shop Card
   const renderShopCard = ({ item }) => {
     return (
-      <View style={styles.shopCard}>
+      <TouchableOpacity
+        style={styles.shopCard}
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('BranchDetail', { branchId: item.id })}
+      >
         {/* Cover Image */}
         <View style={styles.imageContainer}>
           {item.image ? (
@@ -321,7 +325,7 @@ const ShopsScreen = ({ route, navigation }) => {
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
