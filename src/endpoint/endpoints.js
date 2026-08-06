@@ -28,6 +28,12 @@ const ENDPOINTS = {
   BRANCH_CREATE: `${BASE_URL}/branches/create/`,
   BRANCH_IMAGES: `${BASE_URL}/branch-images/`,
   BRANCH_SOCIAL_LINKS: `${BASE_URL}/branch-social-links/`,
+  BRANCH_DETAIL: (id) => `${BASE_URL}/branches/${id}/`,
+  BRANCH_REVIEWS: `${BASE_URL}/branch-reviews/`,
+  BRANCH_REVIEW_CREATE: `${BASE_URL}/branch-reviews/create/`,
+  BRANCH_REVIEW_UPDATE: (id) => `${BASE_URL}/branch-reviews/${id}/update/`,
+  BRANCH_REVIEW_DELETE: (id) => `${BASE_URL}/branch-reviews/${id}/delete/`,
+  BRANCH_VIEW_LOGS_CREATE: `${BASE_URL}/branch-view-logs/create/`,
 
 
   // Groups
