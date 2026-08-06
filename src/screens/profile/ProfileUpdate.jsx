@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Button, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ENDPOINTS from '../../endpoint/endpoints';
+import { setProfileCache, invalidateProfileCache } from '../../utils/lookupCache';
 
 const ProfileUpdateScreen = ({ navigation, route }) => {
   // Pre-fill with existing data passed through navigation params
   const { profileData } = route.params || {};
 
-  const [phoneNumber, setPhoneNumber] = useState(profileData?.phone_number || '');
-  const [businessName, setBusinessName] = useState(profileData?.business_name || '');
+  const initialPhone = profileData?.owner?.phone_number || profileData?.phone_number || profileData?.user?.phone_number || '';
+  const initialBusiness = profileData?.owner?.business_name || profileData?.business_name || profileData?.user?.business_name || '';
+
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone);
+  const [businessName, setBusinessName] = useState(initialBusiness);
   const [logo, setLogo] = useState(null); // Will store the selected image
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,6 +25,16 @@ const ProfileUpdateScreen = ({ navigation, route }) => {
 
     setIsLoading(true);
     try {
+      const storedToken = await AsyncStorage.getItem('bearer_token');
+      const headers = {
+        'Accept': 'application/json',
+      };
+      if (storedToken) {
+        headers['Authorization'] = storedToken.includes(' ') 
+          ? storedToken 
+          : (storedToken.startsWith('eyJ') ? `Bearer ${storedToken}` : `Token ${storedToken}`);
+      }
+
       const formData = new FormData();
       formData.append('phone_number', phoneNumber);
       formData.append('business_name', businessName);
@@ -33,18 +48,18 @@ const ProfileUpdateScreen = ({ navigation, route }) => {
       }
 
       const response = await fetch(ENDPOINTS.PROFILE_UPDATE, {
-        method: 'PUT', // or PATCH/POST depending on your backend
-        headers: {
-          'Accept': 'application/json',
-          // Assuming token might be needed:
-          // 'Authorization': `Bearer ${token}`
-        },
+        method: 'PUT',
+        headers: headers,
         body: formData,
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        await setProfileCache(data?.owner ? data : null);
+        if (!data?.owner) {
+          await invalidateProfileCache();
+        }
         Alert.alert('Success', 'Profile updated successfully!');
         navigation.goBack();
       } else {

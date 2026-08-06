@@ -16,34 +16,116 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('username', email.trim());
-      formData.append('password', password);
+      const COMMON_HEADERS = {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      };
 
-      const response = await fetch(ENDPOINTS.LOGIN, {
+      // Try sending JSON first, if login backend expects JSON
+      let response = await fetch(ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
-          // 'User-Agent': 'NeeYrMobileApp/1.0',
+          ...COMMON_HEADERS,
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({
+          username: email.trim(),
+          password: password,
+        }),
       });
 
-      const data = await response.json();
+      let rawText = await response.text();
+      let data = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch (jsonErr) {
+        console.error("Login response is not JSON:", rawText);
+      }
 
-      if (response.ok) {
-        Alert.alert('Success', data.message || 'Logged in successfully!');
-        // Pass the user data from the login response if available, otherwise fallback to the entered email
+      // Check if Imunify360 bot-protection blocked the request
+      if (data?.message && data.message.includes('Imunify360')) {
+        console.warn("Imunify360 detected. Retrying with FormData and alternative User-Agent...");
+        const formData = new FormData();
+        formData.append('username', email.trim());
+        formData.append('password', password);
+
+        response = await fetch(ENDPOINTS.LOGIN, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'NeeYrMobileApp/1.0 (Android; React Native)',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+          body: formData,
+        });
+
+        rawText = await response.text();
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {}
+      } else if (!response.ok) {
+        // If JSON format didn't succeed, fallback to FormData
+        console.log("JSON login failed with status:", response.status, ". Retrying with FormData...");
+        const formData = new FormData();
+        formData.append('username', email.trim());
+        formData.append('password', password);
+
+        const formDataResponse = await fetch(ENDPOINTS.LOGIN, {
+          method: 'POST',
+          headers: COMMON_HEADERS,
+          body: formData,
+        });
+
+        const formDataRaw = await formDataResponse.text();
+        let formDataData = {};
+        try {
+          formDataData = JSON.parse(formDataRaw);
+        } catch (e) {}
+
+        if (formDataResponse.ok || (!formDataData?.message?.includes('Imunify360') && (response.status === 400 || response.status === 401))) {
+          response = formDataResponse;
+          data = formDataData;
+        }
+      }
+
+      console.log("LOGIN RESPONSE STATUS:", response.status);
+      console.log("LOGIN RESPONSE DATA:", JSON.stringify(data, null, 2));
+
+      // Extract token across all known conventions
+      const token = 
+        data.tokens?.access || 
+        data.tokens?.token || 
+        data.token || 
+        data.key || 
+        data.access || 
+        data.access_token || 
+        data.auth_token || 
+        data.bearer_token || 
+        data.jwt || 
+        data.data?.token || 
+        data.data?.access || 
+        data.data?.access_token || 
+        data.data?.key || 
+        data.user?.token || 
+        data.user?.access || 
+        data.user?.key || 
+        data.authorisation?.token || 
+        data.authorization?.token;
+
+      console.log("EXTRACTED TOKEN:", token);
+
+      const isBotBlocked = data?.message && data.message.includes('Imunify360');
+
+      if (response.ok && !isBotBlocked && token) {
+        Alert.alert('Success', 'Logged in successfully!');
+        
         const userObj = data.user || {
           username: email,
           email: email,
         };
-        
-        // Save the bearer token for subsequent API calls
-        const token = data.token || data.access || data.bearer_token;
-        if (token) {
-          await AsyncStorage.setItem('bearer_token', token);
-        }
+
+        await AsyncStorage.setItem('bearer_token', token);
         
         // Navigate back to the Profile tab inside MainTabs
         navigation.navigate('MainTabs', {
@@ -51,7 +133,10 @@ const LoginScreen = ({ navigation }) => {
           params: { user: userObj, token: token }
         });
       } else {
-        const errorMsg = data.error || data.detail || 'Invalid credentials';
+        let errorMsg = data.error || data.detail || data.message || 'Invalid credentials';
+        if (isBotBlocked) {
+          errorMsg = 'Security Protection (Imunify360) blocked the login request from this IP/device.\n\nPlease contact your server administrator or try switching network/VPN.';
+        }
         Alert.alert('Login Failed', errorMsg);
       }
     } catch (error) {

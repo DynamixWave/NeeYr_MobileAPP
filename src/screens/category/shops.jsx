@@ -30,6 +30,7 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faMapPin } from '@fortawesome/free-solid-svg-icons/faMapPin';
 import { faCity } from '@fortawesome/free-solid-svg-icons/faCity';
 import ENDPOINTS from '../../endpoint/endpoints';
+import { getRegions, getCities } from '../../utils/lookupCache';
 
 const ShopsScreen = ({ route, navigation }) => {
   const { categoryId, categoryName } = route?.params || {};
@@ -73,45 +74,32 @@ const ShopsScreen = ({ route, navigation }) => {
     }
     setError(null);
 
+    const sortByName = (list) =>
+      [...(list || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
     try {
-      // Parallel API calls for branches, brands, regions, cities, images, and social links
-      const [
-        branchesRes,
-        brandsRes,
-        regionsRes,
-        citiesRes,
-        imagesRes,
-        socialRes,
-      ] = await Promise.allSettled([
-        fetch(`${ENDPOINTS.BRANCHES}?page_size=100`).then((r) => r.json()),
-        fetch(`${ENDPOINTS.BUSINESS_BRANDS}?page_size=100`).then((r) => r.json()),
-        fetch(`${ENDPOINTS.REGIONS}?page_size=100`).then((r) => r.json()),
-        fetch(`${ENDPOINTS.CITIES}?page_size=100`).then((r) => r.json()),
-        fetch(`${ENDPOINTS.BRANCH_IMAGES}?page_size=100`).then((r) => r.json()),
-        fetch(`${ENDPOINTS.BRANCH_SOCIAL_LINKS}?page_size=100`).then((r) => r.json()),
-      ]);
+      const [branchesRes, brandsRes, imagesRes, socialRes, regionsResult, citiesResult] =
+        await Promise.all([
+          fetch(`${ENDPOINTS.BRANCHES}?page_size=100`).then((r) => r.json()),
+          fetch(`${ENDPOINTS.BUSINESS_BRANDS}?page_size=100`).then((r) => r.json()),
+          fetch(`${ENDPOINTS.BRANCH_IMAGES}?page_size=100`).then((r) => r.json()),
+          fetch(`${ENDPOINTS.BRANCH_SOCIAL_LINKS}?page_size=100`).then((r) => r.json()),
+          getRegions({
+            forceRefresh: isRefresh,
+            onCacheHit: (cached) => setRegions(sortByName(cached)),
+          }),
+          getCities({
+            forceRefresh: isRefresh,
+            onCacheHit: (cached) => setCities(sortByName(cached)),
+          }),
+        ]);
 
-      const branchesData = branchesRes.status === 'fulfilled' ? extractArray(branchesRes.value) : [];
-      const brandsData = brandsRes.status === 'fulfilled' ? extractArray(brandsRes.value) : [];
-      const regionsData = regionsRes.status === 'fulfilled' ? extractArray(regionsRes.value) : [];
-      const citiesData = citiesRes.status === 'fulfilled' ? extractArray(citiesRes.value) : [];
-      const imagesData = imagesRes.status === 'fulfilled' ? extractArray(imagesRes.value) : [];
-      const socialData = socialRes.status === 'fulfilled' ? extractArray(socialRes.value) : [];
-
-      // Sort Regions & Cities alphabetically for clean dropdown lists
-      const sortedRegions = [...regionsData].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '')
-      );
-      const sortedCities = [...citiesData].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '')
-      );
-
-      setBranches(branchesData);
-      setBrands(brandsData);
-      setRegions(sortedRegions);
-      setCities(sortedCities);
-      setImages(imagesData);
-      setSocialLinks(socialData);
+      setBranches(extractArray(branchesRes));
+      setBrands(extractArray(brandsRes));
+      setImages(extractArray(imagesRes));
+      setSocialLinks(extractArray(socialRes));
+      setRegions(sortByName(regionsResult.data));
+      setCities(sortByName(citiesResult.data));
     } catch (err) {
       console.error('Error fetching shops data:', err);
       setError('Failed to load shop listings. Please try again.');

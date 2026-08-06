@@ -23,7 +23,9 @@ const ENDPOINTS = {
 
   // Business Brands, Branches, Images & Social Links
   BUSINESS_BRANDS: `${BASE_URL}/business-brands/`,
+  BUSINESS_BRAND_CREATE: `${BASE_URL}/business-brands/create/`,
   BRANCHES: `${BASE_URL}/branches/`,
+  BRANCH_CREATE: `${BASE_URL}/branches/create/`,
   BRANCH_IMAGES: `${BASE_URL}/branch-images/`,
   BRANCH_SOCIAL_LINKS: `${BASE_URL}/branch-social-links/`,
 

@@ -4,6 +4,7 @@ import TabNavigator from './TabNavigator';
 import LoginScreen from '../screens/profile/Login';
 import SignUpScreen from '../screens/profile/Signup';
 import CreateBusinessScreen from '../screens/profile/CreateBusiness';
+import CreateShopScreen from '../screens/profile/CreateShop';
 import ProfileUpdateScreen from '../screens/profile/ProfileUpdate';
 import ShopsScreen from '../screens/category/shops';
 
@@ -18,6 +19,7 @@ const MainStack = () => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
+      <Stack.Screen name="CreateShop" component={CreateShopScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdateScreen} />
     </Stack.Navigator>
   );

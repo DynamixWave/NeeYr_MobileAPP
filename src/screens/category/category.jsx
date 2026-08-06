@@ -51,7 +51,7 @@ import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons/faMagnifyin
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import { faRotateRight } from '@fortawesome/free-solid-svg-icons/faRotateRight';
 import { faStore as faStoreIcon } from '@fortawesome/free-solid-svg-icons/faStore';
-import ENDPOINTS from '../../endpoint/endpoints';
+import { getCategories } from '../../utils/lookupCache';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -171,7 +171,7 @@ const CategoryScreen = ({ navigation }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch categories from API
+  // Fetch categories from API (AsyncStorage cache + updated_at stamp)
   const fetchCategories = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -180,26 +180,7 @@ const CategoryScreen = ({ navigation }) => {
     }
     setError(null);
 
-    try {
-      const url = ENDPOINTS.CATEGORIES.includes('?')
-        ? `${ENDPOINTS.CATEGORIES}&page_size=100`
-        : `${ENDPOINTS.CATEGORIES}?page_size=100`;
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
-      }
-
-      const json = await response.json();
-      let list = [];
-      if (Array.isArray(json)) {
-        list = json;
-      } else if (json && Array.isArray(json.results)) {
-        list = json.results;
-      } else if (json && Array.isArray(json.data)) {
-        list = json.data;
-      }
-
+    const formatList = (list) => {
       const formattedList = list.map((item, index) => {
         const catName = item.name || item.title || 'Unnamed Category';
         const theme = getCategoryTheme(catName, index);
@@ -209,8 +190,7 @@ const CategoryScreen = ({ navigation }) => {
           : Array.isArray(item.children)
           ? item.children
           : [];
-        
-        // Sort subcategories alphabetically
+
         subcategories = [...subcategories].sort((a, b) => {
           const nameA = typeof a === 'string' ? a : a.name || '';
           const nameB = typeof b === 'string' ? b : b.name || '';
@@ -228,10 +208,20 @@ const CategoryScreen = ({ navigation }) => {
         };
       });
 
-      // Sort categories alphabetically
       formattedList.sort((a, b) => a.name.localeCompare(b.name));
+      return formattedList;
+    };
 
-      setCategories(formattedList);
+    try {
+      const result = await getCategories({
+        forceRefresh: isRefresh,
+        onCacheHit: (cachedList) => {
+          setCategories(formatList(cachedList));
+          setLoading(false);
+        },
+      });
+
+      setCategories(formatList(result.data || []));
     } catch (err) {
       console.error('Failed to fetch categories:', err);
       setError(err.message || 'Failed to load categories.');

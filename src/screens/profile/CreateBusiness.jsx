@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator , Button } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ENDPOINTS from '../../endpoint/endpoints';
+import { setProfileCache, invalidateProfileCache } from '../../utils/lookupCache';
 
 const CreateBusinessScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -16,22 +18,34 @@ const CreateBusinessScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
+      const storedToken = await AsyncStorage.getItem('bearer_token');
+      const headers = {
+        'Accept': 'application/json',
+      };
+      if (storedToken) {
+        headers['Authorization'] = storedToken.includes(' ') 
+          ? storedToken 
+          : (storedToken.startsWith('eyJ') ? `Bearer ${storedToken}` : `Token ${storedToken}`);
+      }
+
       const formData = new FormData();
       formData.append('phone_number', phoneNumber);
       formData.append('business_name', businessName);
 
       const response = await fetch(ENDPOINTS.PROFILE_CREATE, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          // Assuming token is needed, you'd add Authorization: Bearer <token> here
-        },
+        headers: headers,
         body: formData,
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        if (data?.owner) {
+          await setProfileCache(data);
+        } else {
+          await invalidateProfileCache();
+        }
         Alert.alert('Success', 'Business Profile created successfully!');
         navigation.goBack();
       } else {
