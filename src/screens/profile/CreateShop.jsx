@@ -18,6 +18,8 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowLeft';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
 import ENDPOINTS from '../../endpoint/endpoints';
 import {
   getCategories,
@@ -36,6 +38,16 @@ const getAuthHeader = async () => {
     : `Token ${storedToken}`;
 };
 
+const extractArray = (resData) => {
+  if (Array.isArray(resData)) return resData;
+  if (resData && Array.isArray(resData.results)) return resData.results;
+  if (resData && Array.isArray(resData.data)) return resData.data;
+  return [];
+};
+
+const normalizeShopName = (name = '') =>
+  String(name).trim().toLowerCase().replace(/\s+/g, ' ');
+
 const CreateShopScreen = ({ navigation }) => {
   const [shopName, setShopName] = useState('');
   // const [description, setDescription] = useState('');
@@ -49,6 +61,7 @@ const CreateShopScreen = ({ navigation }) => {
   const [originalPhoneNumber, setOriginalPhoneNumber] = useState('');
 
   const [ownerId, setOwnerId] = useState(null);
+  const [existingShopNames, setExistingShopNames] = useState([]);
   const [categories, setCategories] = useState([]);
   const [regions, setRegions] = useState([]);
   const [cities, setCities] = useState([]);
@@ -63,6 +76,69 @@ const CreateShopScreen = ({ navigation }) => {
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [socialLinks, setSocialLinks] = useState([
+    { key: '1', platform_name: '', url: '' },
+  ]);
+
+  const addSocialLinkRow = () => {
+    setSocialLinks((prev) => [
+      ...prev,
+      { key: String(Date.now()), platform_name: '', url: '' },
+    ]);
+  };
+
+  const removeSocialLinkRow = (key) => {
+    setSocialLinks((prev) => {
+      if (prev.length <= 1) {
+        return [{ key: String(Date.now()), platform_name: '', url: '' }];
+      }
+      return prev.filter((row) => row.key !== key);
+    });
+  };
+
+  const updateSocialLinkRow = (key, field, value) => {
+    setSocialLinks((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, [field]: value } : row))
+    );
+  };
+
+  const getFilledSocialLinks = () =>
+    socialLinks
+      .map((row) => ({
+        platform_name: (row.platform_name || '').trim(),
+        url: (row.url || '').trim(),
+      }))
+      .filter((row) => row.platform_name && row.url);
+
+  const fetchOwnerShopNames = async (currentOwnerId, authHeader) => {
+    if (!currentOwnerId) return [];
+
+    try {
+      const response = await fetch(`${ENDPOINTS.BUSINESS_BRANDS}?page_size=100`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) return [];
+
+      return extractArray(data)
+        .filter((brand) => String(brand.owner) === String(currentOwnerId))
+        .map((brand) => brand.name || '')
+        .filter(Boolean);
+    } catch (err) {
+      console.warn('Failed to load owner shops for duplicate check:', err);
+      return [];
+    }
+  };
+
+  const isDuplicateShopName = (name, names = existingShopNames) => {
+    const normalized = normalizeShopName(name);
+    if (!normalized) return false;
+    return names.some((existing) => normalizeShopName(existing) === normalized);
+  };
 
   const fetchOptions = useCallback(async () => {
     setLoadingOptions(true);
@@ -120,6 +196,9 @@ const CreateShopScreen = ({ navigation }) => {
       setPhoneNumber(phone);
       setOriginalBusinessName(businessName);
       setOriginalPhoneNumber(phone);
+
+      const ownerShopNames = await fetchOwnerShopNames(owner.id, authHeader);
+      setExistingShopNames(ownerShopNames);
     } catch (err) {
       console.error('Failed to load create-shop options:', err);
       Alert.alert('Error', 'Failed to load profile, categories, regions, or cities.');
@@ -143,6 +222,7 @@ const CreateShopScreen = ({ navigation }) => {
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   const selectedRegion = regions.find((r) => r.id === selectedRegionId);
   const selectedCity = cities.find((c) => c.id === selectedCityId);
+  const shopNameIsDuplicate = isDuplicateShopName(shopName);
 
   const formatApiError = (data, fallback) => {
     if (data?.details) {
@@ -197,6 +277,18 @@ const CreateShopScreen = ({ navigation }) => {
       const authHeader = await getAuthHeader();
       if (!authHeader) {
         Alert.alert('Error', 'Please log in again');
+        return;
+      }
+
+      // Re-check latest shops for this owner only (other users can reuse the same name)
+      const latestOwnerShopNames = await fetchOwnerShopNames(ownerId, authHeader);
+      setExistingShopNames(latestOwnerShopNames);
+
+      if (isDuplicateShopName(trimmedName, latestOwnerShopNames)) {
+        Alert.alert(
+          'Duplicate Shop Name',
+          'You already have a shop with this name. Please use a different shop name.'
+        );
         return;
       }
 
@@ -305,7 +397,52 @@ const CreateShopScreen = ({ navigation }) => {
         return;
       }
 
-      Alert.alert('Success', 'Shop created successfully!');
+      const branchId =
+        branchData?.branch?.id ||
+        branchData?.id ||
+        branchData?.data?.id;
+
+      const linksToCreate = getFilledSocialLinks();
+      let socialFailed = 0;
+
+      if (branchId && linksToCreate.length > 0) {
+        for (const link of linksToCreate) {
+          try {
+            // API requires exact field names: platform_name, url (+ branch)
+            const socialResponse = await fetch(ENDPOINTS.BRANCH_SOCIAL_LINK_CREATE, {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: authHeader,
+              },
+              body: JSON.stringify({
+                platform_name: link.platform_name,
+                url: link.url,
+                branch: branchId,
+              }),
+            });
+
+            if (!socialResponse.ok) {
+              socialFailed += 1;
+              const socialErr = await socialResponse.json().catch(() => ({}));
+              console.warn('Social link create failed:', socialErr);
+            }
+          } catch (socialErr) {
+            socialFailed += 1;
+            console.warn('Social link create error:', socialErr);
+          }
+        }
+      }
+
+      if (socialFailed > 0) {
+        Alert.alert(
+          'Shop Created',
+          `Shop was created, but ${socialFailed} social link(s) could not be saved.`
+        );
+      } else {
+        Alert.alert('Success', 'Shop created successfully!');
+      }
       navigation.goBack();
     } catch (error) {
       console.error('Create shop error:', error);
@@ -398,12 +535,17 @@ const CreateShopScreen = ({ navigation }) => {
 
           <Text style={styles.label}>Shop Name (Business Name) *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, shopNameIsDuplicate && styles.inputError]}
             placeholder="Loaded from your profile"
             value={shopName}
             onChangeText={setShopName}
             placeholderTextColor="#949494"
           />
+          {shopNameIsDuplicate ? (
+            <Text style={styles.duplicateHint}>
+              You already have a shop with this name. Choose a different one.
+            </Text>
+          ) : null}
 
           {/* <Text style={styles.label}>Description</Text>
           <TextInput
@@ -513,6 +655,46 @@ const CreateShopScreen = ({ navigation }) => {
               />
             </View>
           </View>
+
+          <View style={styles.socialHeader}>
+            <Text style={styles.label}>Social Links</Text>
+            <TouchableOpacity style={styles.addSocialButton} onPress={addSocialLinkRow}>
+              <FontAwesomeIcon icon={faPlus} size={12} color="#fff" />
+              <Text style={styles.addSocialButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.socialHint}>
+            Optional. Tap + to add Facebook, Instagram, website, etc.
+          </Text>
+
+          {socialLinks.map((row, index) => (
+            <View key={row.key} style={styles.socialRow}>
+              <View style={styles.socialRowHeader}>
+                <Text style={styles.socialRowTitle}>Link {index + 1}</Text>
+                <TouchableOpacity onPress={() => removeSocialLinkRow(row.key)}>
+                  <FontAwesomeIcon icon={faTrash} size={14} color="#DC2626" />
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Platform (e.g. Facebook)"
+                value={row.platform_name}
+                onChangeText={(text) =>
+                  updateSocialLinkRow(row.key, 'platform_name', text)
+                }
+                placeholderTextColor="#949494"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="URL (https://...)"
+                value={row.url}
+                onChangeText={(text) => updateSocialLinkRow(row.key, 'url', text)}
+                autoCapitalize="none"
+                keyboardType="url"
+                placeholderTextColor="#949494"
+              />
+            </View>
+          ))}
 
           <TouchableOpacity
             style={[styles.button, isSubmitting && styles.buttonDisabled]}
@@ -640,6 +822,15 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     color: '#333',
   },
+  inputError: {
+    borderColor: '#DC2626',
+    marginBottom: 6,
+  },
+  duplicateHint: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginBottom: 14,
+  },
   textArea: {
     minHeight: 90,
     textAlignVertical: 'top',
@@ -675,6 +866,50 @@ const styles = StyleSheet.create({
   halfField: {
     flex: 1,
     marginRight: 6,
+  },
+  socialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  addSocialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  addSocialButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+    marginLeft: 6,
+  },
+  socialHint: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 10,
+  },
+  socialRow: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    padding: 12,
+    marginBottom: 12,
+  },
+  socialRowHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  socialRowTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#444',
   },
   button: {
     backgroundColor: '#007BFF',

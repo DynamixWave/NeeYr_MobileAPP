@@ -317,7 +317,7 @@ const ShopsScreen = ({ route, navigation }) => {
                   >
                     <FontAwesomeIcon icon={faGlobe} size={12} color="#4F46E5" />
                     <Text style={styles.socialText} numberOfLines={1}>
-                      {soc.platform || soc.name || 'Link'}
+                      {soc.platform_name || soc.platform || soc.name || 'Link'}
                     </Text>
                   </TouchableOpacity>
                 ))}

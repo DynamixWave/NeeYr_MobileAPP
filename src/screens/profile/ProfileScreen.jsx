@@ -7,6 +7,10 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  Linking,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -14,6 +18,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUserCircle } from '@fortawesome/free-solid-svg-icons/faUserCircle';
 import { faStore } from '@fortawesome/free-solid-svg-icons/faStore';
 import { faLocationDot } from '@fortawesome/free-solid-svg-icons/faLocationDot';
+import { faGlobe } from '@fortawesome/free-solid-svg-icons/faGlobe';
+import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ENDPOINTS from '../../endpoint/endpoints';
 import {
@@ -40,8 +47,16 @@ const ProfileScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [authHeader, setAuthHeader] = useState(null);
 
-  const fetchOwnerShops = async (ownerId, authHeader) => {
+  const [socialModalVisible, setSocialModalVisible] = useState(false);
+  const [editingSocial, setEditingSocial] = useState(null);
+  const [socialPlatform, setSocialPlatform] = useState('');
+  const [socialUrl, setSocialUrl] = useState('');
+  const [socialBranchId, setSocialBranchId] = useState(null);
+  const [socialSaving, setSocialSaving] = useState(false);
+
+  const fetchOwnerShops = async (ownerId, header) => {
     if (!ownerId) {
       setMyShops([]);
       return;
@@ -53,7 +68,7 @@ const ProfileScreen = ({ navigation, route }) => {
         method: 'GET',
         headers: {
           Accept: 'application/json',
-          Authorization: authHeader,
+          Authorization: header,
         },
       });
       const data = await response.json();
@@ -85,6 +100,16 @@ const ProfileScreen = ({ navigation, route }) => {
           logo = `https://apineeyrdirectory.fothubtv.com${logo}`;
         }
 
+        const socialLinks = branches.flatMap((branch) => {
+          const links = Array.isArray(branch.social_links) ? branch.social_links : [];
+          return links.map((link) => ({
+            id: link.id,
+            platform_name: link.platform_name || link.platform || link.name || 'Link',
+            url: link.url || link.link || '',
+            branchId: branch.id,
+          }));
+        });
+
         return {
           id: brand.id,
           name: brand.name || 'Untitled Shop',
@@ -92,12 +117,14 @@ const ProfileScreen = ({ navigation, route }) => {
           categoryName: brand.category_detail?.name || 'Uncategorized',
           logo,
           branchCount: branches.length,
+          primaryBranchId: firstBranch?.id || null,
           location: [cityName, regionName].filter(Boolean).join(', '),
           phone:
             firstBranch?.phone_number ||
             brand.phone_number ||
             '',
           status: firstBranch?.status || null,
+          socialLinks,
         };
       });
 
@@ -128,32 +155,34 @@ const ProfileScreen = ({ navigation, route }) => {
         return;
       }
 
-      const authHeader = token.includes(' ')
+      const header = token.includes(' ')
         ? token
         : token.startsWith('eyJ')
           ? `Bearer ${token}`
           : `Token ${token}`;
 
-      const result = await getProfile(authHeader, {
+      const result = await getProfile(header, {
         forceRefresh: isRefresh,
         onCacheHit: (cached) => {
           setProfileData(cached);
           setIsLoggedIn(true);
           setIsLoading(false);
+          setAuthHeader(header);
           const ownerId = cached?.owner?.id;
           if (ownerId) {
-            fetchOwnerShops(ownerId, authHeader);
+            fetchOwnerShops(ownerId, header);
           }
         },
       });
 
       setProfileData(result.data);
       setIsLoggedIn(true);
-      await AsyncStorage.setItem('bearer_token', authHeader);
+      setAuthHeader(header);
+      await AsyncStorage.setItem('bearer_token', header);
 
       const ownerId = result.data?.owner?.id;
       if (ownerId) {
-        await fetchOwnerShops(ownerId, authHeader);
+        await fetchOwnerShops(ownerId, header);
       } else {
         setMyShops([]);
       }
@@ -191,6 +220,165 @@ const ProfileScreen = ({ navigation, route }) => {
 
   const handleCreateShop = () => {
     navigation.navigate('CreateShop');
+  };
+
+  const handleAddBranches = (shop) => {
+    navigation.navigate('Payment', { shop });
+  };
+
+  const openSocialLink = (url) => {
+    if (!url) return;
+    const formatted = url.startsWith('http') ? url : `https://${url}`;
+    Linking.openURL(formatted).catch(() =>
+      Alert.alert('Error', 'Could not open this link')
+    );
+  };
+
+  const openAddSocialModal = (shop) => {
+    if (!shop.primaryBranchId) {
+      Alert.alert('No Branch', 'Create a branch for this shop before adding social links.');
+      return;
+    }
+    setEditingSocial(null);
+    setSocialBranchId(shop.primaryBranchId);
+    setSocialPlatform('');
+    setSocialUrl('');
+    setSocialModalVisible(true);
+  };
+
+  const openEditSocialModal = (link) => {
+    setEditingSocial(link);
+    setSocialBranchId(link.branchId);
+    setSocialPlatform(link.platform_name || '');
+    setSocialUrl(link.url || '');
+    setSocialModalVisible(true);
+  };
+
+  const closeSocialModal = () => {
+    setSocialModalVisible(false);
+    setEditingSocial(null);
+    setSocialPlatform('');
+    setSocialUrl('');
+    setSocialBranchId(null);
+  };
+
+  const refreshOwnerShops = async () => {
+    const ownerId = profileData?.owner?.id;
+    if (ownerId && authHeader) {
+      await fetchOwnerShops(ownerId, authHeader);
+    }
+  };
+
+  const handleSaveSocialLink = async () => {
+    const platform = socialPlatform.trim();
+    const url = socialUrl.trim();
+
+    if (!platform || !url) {
+      Alert.alert('Error', 'Please enter platform name and URL');
+      return;
+    }
+    if (!authHeader) {
+      Alert.alert('Error', 'Please log in again');
+      return;
+    }
+
+    setSocialSaving(true);
+    try {
+      const payload = {
+        platform_name: platform,
+        url: url,
+      };
+
+      let response;
+      if (editingSocial?.id) {
+        response = await fetch(ENDPOINTS.BRANCH_SOCIAL_LINK_UPDATE(editingSocial.id), {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: authHeader,
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        if (!socialBranchId) {
+          Alert.alert('Error', 'Branch not found for this shop');
+          return;
+        }
+        response = await fetch(ENDPOINTS.BRANCH_SOCIAL_LINK_CREATE, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: authHeader,
+          },
+          body: JSON.stringify({
+            ...payload,
+            branch: socialBranchId,
+          }),
+        });
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const details = data?.details
+          ? Object.entries(data.details)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+              .join('\n')
+          : null;
+        Alert.alert(
+          'Error',
+          details || data?.error || data?.detail || 'Failed to save social link'
+        );
+        return;
+      }
+
+      closeSocialModal();
+      await refreshOwnerShops();
+    } catch (e) {
+      Alert.alert('Error', 'Network request failed');
+    } finally {
+      setSocialSaving(false);
+    }
+  };
+
+  const handleDeleteSocialLink = (link) => {
+    Alert.alert(
+      'Delete Social Link',
+      `Remove ${link.platform_name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                ENDPOINTS.BRANCH_SOCIAL_LINK_DELETE(link.id),
+                {
+                  method: 'DELETE',
+                  headers: {
+                    Accept: 'application/json',
+                    Authorization: authHeader,
+                  },
+                }
+              );
+              if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                Alert.alert(
+                  'Error',
+                  data?.error || data?.detail || 'Failed to delete social link'
+                );
+                return;
+              }
+              await refreshOwnerShops();
+            } catch (e) {
+              Alert.alert('Error', 'Network request failed');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleEditBusiness = () => {
@@ -323,6 +511,61 @@ const ProfileScreen = ({ navigation, route }) => {
                           {shop.description}
                         </Text>
                       )}
+
+                      <View style={styles.socialSection}>
+                        <View style={styles.socialSectionHeader}>
+                          <Text style={styles.socialSectionTitle}>Social Links</Text>
+                          <TouchableOpacity
+                            style={styles.addSocialChip}
+                            onPress={() => openAddSocialModal(shop)}
+                          >
+                            <FontAwesomeIcon icon={faPlus} size={10} color="#fff" />
+                            <Text style={styles.addSocialChipText}>Add</Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        {(!shop.socialLinks || shop.socialLinks.length === 0) ? (
+                          <Text style={styles.noSocialText}>No social links yet</Text>
+                        ) : (
+                          shop.socialLinks.map((link) => (
+                            <View key={link.id} style={styles.socialLinkRow}>
+                              <TouchableOpacity
+                                style={styles.socialLinkMain}
+                                onPress={() => openSocialLink(link.url)}
+                              >
+                                <FontAwesomeIcon icon={faGlobe} size={12} color="#007BFF" />
+                                <View style={styles.socialLinkTextWrap}>
+                                  <Text style={styles.socialPlatform}>
+                                    {link.platform_name}
+                                  </Text>
+                                  <Text style={styles.socialUrl} numberOfLines={1}>
+                                    {link.url}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.socialUpdateBtn}
+                                onPress={() => openEditSocialModal(link)}
+                              >
+                                <Text style={styles.socialUpdateText}>Update</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.socialDeleteBtn}
+                                onPress={() => handleDeleteSocialLink(link)}
+                              >
+                                <Text style={styles.socialDeleteText}>Delete</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ))
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.addBranchesButton}
+                        onPress={() => handleAddBranches(shop)}
+                      >
+                        <Text style={styles.addBranchesButtonText}>Add Branches</Text>
+                      </TouchableOpacity>
                     </View>
                   ))
                 )}
@@ -350,6 +593,57 @@ const ProfileScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      <Modal
+        visible={socialModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeSocialModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingSocial ? 'Update Social Link' : 'Add Social Link'}
+              </Text>
+              <TouchableOpacity onPress={closeSocialModal}>
+                <FontAwesomeIcon icon={faXmark} size={18} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Platform (e.g. Facebook)"
+              value={socialPlatform}
+              onChangeText={setSocialPlatform}
+              placeholderTextColor="#949494"
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="URL (https://...)"
+              value={socialUrl}
+              onChangeText={setSocialUrl}
+              autoCapitalize="none"
+              keyboardType="url"
+              placeholderTextColor="#949494"
+            />
+
+            <TouchableOpacity
+              style={styles.modalSaveBtn}
+              onPress={handleSaveSocialLink}
+              disabled={socialSaving}
+            >
+              {socialSaving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.modalSaveText}>
+                  {editingSocial ? 'Update' : 'Create'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -571,5 +865,150 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#555',
     marginTop: 6,
+  },
+  socialSection: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+  },
+  socialSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  socialSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333',
+  },
+  addSocialChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  addSocialChipText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  noSocialText: {
+    fontSize: 12,
+    color: '#888',
+  },
+  socialLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    padding: 8,
+  },
+  socialLinkMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  socialLinkTextWrap: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  socialPlatform: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#222',
+  },
+  socialUrl: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 1,
+  },
+  socialUpdateBtn: {
+    backgroundColor: '#f0ad4e',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 5,
+    marginRight: 4,
+  },
+  socialUpdateText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  socialDeleteBtn: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 5,
+  },
+  socialDeleteText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  addBranchesButton: {
+    marginTop: 12,
+    backgroundColor: '#28a745',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  addBranchesButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#222',
+  },
+  modalInput: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 10,
+    fontSize: 15,
+    color: '#333',
+  },
+  modalSaveBtn: {
+    backgroundColor: '#007BFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  modalSaveText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

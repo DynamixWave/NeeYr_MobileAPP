@@ -28,6 +28,10 @@ const ENDPOINTS = {
   BRANCH_CREATE: `${BASE_URL}/branches/create/`,
   BRANCH_IMAGES: `${BASE_URL}/branch-images/`,
   BRANCH_SOCIAL_LINKS: `${BASE_URL}/branch-social-links/`,
+  BRANCH_SOCIAL_LINK_CREATE: `${BASE_URL}/branch-social-links/create/`,
+  BRANCH_SOCIAL_LINK_DETAIL: (id) => `${BASE_URL}/branch-social-links/${id}/`,
+  BRANCH_SOCIAL_LINK_UPDATE: (id) => `${BASE_URL}/branch-social-links/${id}/update/`,
+  BRANCH_SOCIAL_LINK_DELETE: (id) => `${BASE_URL}/branch-social-links/${id}/delete/`,
   BRANCH_DETAIL: (id) => `${BASE_URL}/branches/${id}/`,
   BRANCH_REVIEWS: `${BASE_URL}/branch-reviews/`,
   BRANCH_REVIEW_CREATE: `${BASE_URL}/branch-reviews/create/`,
@@ -48,27 +52,27 @@ const ENDPOINTS = {
   PERMISSION_DETAIL: (id) => `${BASE_URL}/api/permissions/${id}/`,
 
   // Plans
-  PLAN_LIST: `${BASE_URL}/api/plans/`,
-  PLAN_CREATE: `${BASE_URL}/api/plans/create/`,
-  PLAN_DETAIL: (id) => `${BASE_URL}/api/plans/${id}/`,
-  PLAN_UPDATE: (id) => `${BASE_URL}/api/plans/${id}/update/`,
-  PLAN_DELETE: (id) => `${BASE_URL}/api/plans/${id}/delete/`,
+  PLAN_LIST: `${BASE_URL}/plans/`,
+  PLAN_CREATE: `${BASE_URL}/plans/create/`,
+  PLAN_DETAIL: (id) => `${BASE_URL}/plans/${id}/`,
+  PLAN_UPDATE: (id) => `${BASE_URL}/plans/${id}/update/`,
+  PLAN_DELETE: (id) => `${BASE_URL}/plans/${id}/delete/`,
 
   // Owner & Profile
-  OWNER_LIST: `${BASE_URL}/api/owners/`,                  
-  OWNER_DETAIL: (id = '') => `${BASE_URL}/api/owners/${id ? id + '/' : ''}`, 
-  OWNER_UPDATE: (id = '') => `${BASE_URL}/api/owners/${id ? id + '/update/' : 'update/'}`,
-  OWNER_DELETE: (id) => `${BASE_URL}/api/owners/${id}/delete/`,
+  OWNER_LIST: `${BASE_URL}/owners/`,                  
+  OWNER_DETAIL: (id = '') => `${BASE_URL}/owners/${id ? id + '/' : ''}`, 
+  OWNER_UPDATE: (id = '') => `${BASE_URL}/owners/${id ? id + '/update/' : 'update/'}`,
+  OWNER_DELETE: (id) => `${BASE_URL}/owners/${id}/delete/`,
   PROFILE: `${BASE_URL}/profile/`,
   PROFILE_CREATE: `${BASE_URL}/profile/create/`,
   PROFILE_UPDATE: `${BASE_URL}/profile/update/`,
 
   // Payments & Subscriptions
-  PAYMENT_INITIATE: `${BASE_URL}/api/payments/initiate/`,
-  PAYMENT_TRANSACTIONS: `${BASE_URL}/api/payments/transactions/`,
-  PAYMENT_CHECK_STATUS: (orderId) => `${BASE_URL}/api/payments/check-status/${orderId}/`,
-  SUBSCRIPTION_HISTORY: `${BASE_URL}/api/subscriptions/history/`,
-  WEBHOOK_MMPAY: `${BASE_URL}/api/webhooks/mmpay/`,
+  PAYMENT_INITIATE: `${BASE_URL}/payments/initiate/`,
+  PAYMENT_TRANSACTIONS: `${BASE_URL}/payments/transactions/`,
+  PAYMENT_CHECK_STATUS: (orderId) => `${BASE_URL}/payments/check-status/${orderId}/`,
+  SUBSCRIPTION_HISTORY: `${BASE_URL}/payments/subscription-histories/`,
+  WEBHOOK_MMPAY: `${BASE_URL}/webhooks/mmpay/`,
 };
 
 export default ENDPOINTS;
