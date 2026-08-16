@@ -292,7 +292,7 @@ const ProfileScreen = ({ navigation, route }) => {
       let response;
       if (editingSocial?.id) {
         response = await fetch(ENDPOINTS.BRANCH_SOCIAL_LINK_UPDATE(editingSocial.id), {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

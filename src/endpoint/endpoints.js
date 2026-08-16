@@ -39,6 +39,8 @@ const ENDPOINTS = {
   BRANCH_REVIEW_DELETE: (id) => `${BASE_URL}/branch-reviews/${id}/delete/`,
   BRANCH_VIEW_LOGS_CREATE: `${BASE_URL}/branch-view-logs/create/`,
 
+  // Promotion banners
+  BANNERS: `${BASE_URL}/banners/`,
 
   // Groups
   GROUP_LIST: `${BASE_URL}/api/groups/`,
