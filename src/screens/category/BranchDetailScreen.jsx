@@ -32,6 +32,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import ENDPOINTS from '../../endpoint/endpoints';
 import { getProfile } from '../../utils/lookupCache';
+import FavoriteButton from '../../components/FavoriteButton';
+
 
 const extractArray = (resData) => {
   if (Array.isArray(resData)) return resData;
@@ -244,7 +246,10 @@ const BranchDetailScreen = ({ route, navigation }) => {
 
         {/* Basic Info */}
         <View style={styles.infoSection}>
-          <Text style={styles.branchName}>{branch.name || branch.branch_name}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.branchName} numberOfLines={2}>{branch.name || branch.branch_name}</Text>
+            <FavoriteButton branchId={branchId} size={24} style={styles.detailFavoriteButton} />
+          </View>
           {brandName && (
             <View style={styles.row}>
               <FontAwesomeIcon icon={faBuilding} size={14} color="#64748B" />
@@ -510,7 +515,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginBottom: 8,
   },
-  branchName: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginBottom: 6 },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  branchName: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', flex: 1, marginRight: 12 },
+  detailFavoriteButton: { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0, padding: 0 },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   brandNameText: { fontSize: 16, color: '#64748B', marginLeft: 8 },
   iconSpaced: { marginRight: 8 },

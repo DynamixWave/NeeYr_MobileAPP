@@ -21,12 +21,15 @@ import { faLocationDot } from '@fortawesome/free-solid-svg-icons/faLocationDot';
 import { faGlobe } from '@fortawesome/free-solid-svg-icons/faGlobe';
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import { faHeart } from '@fortawesome/free-solid-svg-icons/faHeart';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ENDPOINTS from '../../endpoint/endpoints';
 import {
   getProfile,
   invalidateProfileCache,
 } from '../../utils/lookupCache';
+import { useFavorites } from '../../context/FavoriteContext';
+
 
 const extractArray = (resData) => {
   if (Array.isArray(resData)) return resData;
@@ -55,6 +58,9 @@ const ProfileScreen = ({ navigation, route }) => {
   const [socialUrl, setSocialUrl] = useState('');
   const [socialBranchId, setSocialBranchId] = useState(null);
   const [socialSaving, setSocialSaving] = useState(false);
+
+  const { refreshFavorites } = useFavorites();
+
 
   const fetchOwnerShops = async (ownerId, header) => {
     if (!ownerId) {
@@ -391,7 +397,9 @@ const ProfileScreen = ({ navigation, route }) => {
     setProfileData(null);
     setMyShops([]);
     setIsLoggedIn(false);
+    refreshFavorites();
   };
+
 
   const userData = profileData?.owner?.user || profileData?.user || profileData || defaultUser;
   const isOwner =
@@ -456,7 +464,16 @@ const ProfileScreen = ({ navigation, route }) => {
             </View>
           )}
 
+          <TouchableOpacity 
+            style={styles.savedShopsBtn} 
+            onPress={() => navigation.navigate('FavoriteScreen')}
+          >
+            <FontAwesomeIcon icon={faHeart} size={20} color="#EF4444" />
+            <Text style={styles.savedShopsText}>Saved Shops</Text>
+          </TouchableOpacity>
+
           {!isOwner && (
+
             <TouchableOpacity style={styles.createBusinessButton} onPress={handleCreateBusiness}>
               <Text style={styles.createBusinessButtonText}>Create Business Owner Account</Text>
             </TouchableOpacity>
@@ -721,6 +738,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 15,
+  },
+  savedShopsBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  savedShopsText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   createShopButton: {
     backgroundColor: '#007BFF',

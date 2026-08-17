@@ -41,6 +41,14 @@ const ENDPOINTS = {
 
   // Promotion banners
   BANNERS: `${BASE_URL}/banners/`,
+  PROMOTION_BANNERS: `${BASE_URL}/promotion-banners/`,
+
+  // User Favorites
+  USER_FAVORITES: `${BASE_URL}/user-favorites/`,
+  USER_FAVORITE_CREATE: `${BASE_URL}/user-favorites/create/`,
+  USER_FAVORITE_DETAIL: (id) => `${BASE_URL}/user-favorites/${id}/`,
+  USER_FAVORITE_DELETE: (id) => `${BASE_URL}/user-favorites/${id}/delete/`,
+  USER_FAVORITE_CHECK: (branchId) => `${BASE_URL}/user-favorites/check/?branch_id=${branchId}`,
 
   // Groups
   GROUP_LIST: `${BASE_URL}/api/groups/`,

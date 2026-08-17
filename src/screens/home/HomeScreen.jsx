@@ -22,6 +22,10 @@ import { faPhone } from '@fortawesome/free-solid-svg-icons/faPhone';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons/faChevronLeft';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons/faChevronRight';
 import ENDPOINTS from '../../endpoint/endpoints';
+import FavoriteButton from '../../components/FavoriteButton';
+import PromotionBannerCarousel from '../../components/PromotionBannerCarousel';
+
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_PADDING = 20;
@@ -257,6 +261,9 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryBadgeText}>{item.categoryName}</Text>
           </View>
+          <View style={styles.favoriteBadge}>
+            <FavoriteButton branchId={item.id} />
+          </View>
         </View>
 
         <View style={styles.cardBody}>
@@ -314,6 +321,10 @@ const HomeScreen = ({ navigation }) => {
         {item.phone ? (
           <Text style={styles.shopRowMeta}>{item.phone}</Text>
         ) : null}
+      </View>
+
+      <View style={styles.shopRowAction}>
+        <FavoriteButton branchId={item.id} />
       </View>
     </TouchableOpacity>
   );
@@ -400,6 +411,8 @@ const HomeScreen = ({ navigation }) => {
           clearButtonMode="while-editing"
         />
       </View>
+
+      <PromotionBannerCarousel />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Featured</Text>
@@ -661,6 +674,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  favoriteBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
   cardBody: {
     padding: 14,
   },
@@ -738,6 +756,10 @@ const styles = StyleSheet.create({
   shopRowInfo: {
     flex: 1,
     marginLeft: 12,
+  },
+  shopRowAction: {
+    paddingLeft: 8,
+    justifyContent: 'center',
   },
   shopRowName: {
     fontSize: 15,

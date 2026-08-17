@@ -31,6 +31,8 @@ import { faMapPin } from '@fortawesome/free-solid-svg-icons/faMapPin';
 import { faCity } from '@fortawesome/free-solid-svg-icons/faCity';
 import ENDPOINTS from '../../endpoint/endpoints';
 import { getRegions, getCities } from '../../utils/lookupCache';
+import FavoriteButton from '../../components/FavoriteButton';
+
 
 const ShopsScreen = ({ route, navigation }) => {
   const { categoryId, categoryName } = route?.params || {};
@@ -268,6 +270,9 @@ const ShopsScreen = ({ route, navigation }) => {
               <Text style={styles.categoryBadgeText}>{categoryName}</Text>
             </View>
           )}
+          <View style={styles.favoriteBadge}>
+            <FavoriteButton branchId={item.id} size={20} />
+          </View>
         </View>
 
         {/* Card Details */}
@@ -824,9 +829,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '700',
+  },
+  favoriteBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
   cardContent: {
     padding: 16,

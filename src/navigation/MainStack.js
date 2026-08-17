@@ -9,6 +9,8 @@ import ProfileUpdateScreen from '../screens/profile/ProfileUpdate';
 import PaymentScreen from '../screens/profile/Payment';
 import ShopsScreen from '../screens/category/shops';
 import BranchDetailScreen from '../screens/category/BranchDetailScreen';
+import FavoriteScreen from '../screens/profile/FavoriteScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +27,7 @@ const MainStack = () => {
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdateScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="BranchDetail" component={BranchDetailScreen} />
+      <Stack.Screen name="FavoriteScreen" component={FavoriteScreen} />
     </Stack.Navigator>
   );
 };
